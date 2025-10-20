@@ -96,4 +96,41 @@ class EventController extends Controller
 
         return back()->with('ok', 'Visibilidad actualizada');
     }
+    
+    public function bulk(Request $request)
+    {
+    $data = $request->validate([
+        'action' => ['required','in:approve,publish,approve_publish,hide'],
+        'ids'    => ['required','array','min:1'],
+        'ids.*'  => ['integer','exists:events,id'],
+    ]);
+
+    $q = \App\Models\Event::query()->whereIn('id', $data['ids']);
+
+    $updates = [];
+    switch ($data['action']) {
+        case 'approve':
+            $updates = ['moderation' => 'approved'];
+            break;
+        case 'publish':
+            $updates = ['visible' => true];
+            break;
+        case 'approve_publish':
+            $updates = ['moderation' => 'approved', 'visible' => true];
+            break;
+        case 'hide':
+            $updates = ['visible' => false];
+            break;
+    }
+
+    $affected = 0;
+    if (!empty($updates)) {
+        $affected = $q->update($updates);
+    }
+
+    return redirect()
+        ->route('admin.events.index', $request->only('status','q','per_page','page'))
+        ->with('ok', "Acción '{$data['action']}' aplicada a {$affected} eventos");
+    }
+
 }

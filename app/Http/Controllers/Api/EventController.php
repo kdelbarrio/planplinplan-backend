@@ -34,10 +34,10 @@ class EventController extends Controller
             // públicos por defecto
             ->where('visible', true)
             ->where('is_canceled', false)
-            // por defecto, sólo futuros (o recientes si ajustas)
-            ->when(!$includePast, fn($q) =>
-                $q->where('starts_at', '>=', now()->subDays(0))
-            )
+            ->when(!$includePast, function ($q) {
+            $startLocal = \Illuminate\Support\Carbon::now('Europe/Madrid')->startOfDay()->utc();
+            $q->where('ends_at', '>=', $startLocal);
+})
             // filtros territoriales
             ->when($territory, function ($q) use ($territory) {
                 $q->where(function ($qq) use ($territory) {

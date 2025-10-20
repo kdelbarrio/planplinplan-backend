@@ -11,6 +11,9 @@
     .row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
     .btn{display:inline-block; padding:8px 12px; border:1px solid #ccc; border-radius:6px; text-decoration:none}
     .btn-primary{background:#1f6feb; color:#fff; border-color:#1f6feb}
+    .field-help{font-size:12px; color:#666}
+    .src-block{background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px; padding:10px; margin-top:6px}
+    .copy{font-size:12px; margin-left:6px}
   </style>
 </head>
 <body>
@@ -29,22 +32,55 @@
   <form method="post" action="{{ route('admin.events.update', $event) }}">
     @csrf
     @method('PUT')
-    <input type="hidden" name="key" value="{{ request('key') }}">
 
+    {{-- Título --}}
     <label>Título (curado)</label>
-    <input type="text" name="title_cur" value="{{ old('title_cur', $event->title_cur) }}" placeholder="Opcional…">
+    <div class="row">
+      <div>
+        <input id="title_cur" type="text" name="title_cur" value="{{ old('title_cur', $event->title_cur) }}" placeholder="Opcional…">
+        <div class="field-help">Se mostrará este si existe; si no, el de origen.</div>
+      </div>
+      <div>
+        <div class="src-block">
+          <div><strong>Origen:</strong> <span id="title_src_txt">{{ $event->title_src }}</span></div>
+          <button type="button" class="btn copy" data-target="#title_cur" data-src="#title_src_txt">Usar como curado</button>
+        </div>
+      </div>
+    </div>
 
+    {{-- Descripción --}}
     <label>Descripción (curada)</label>
-    <textarea name="description_cur" rows="6" placeholder="Opcional…">{{ old('description_cur', $event->description_cur) }}</textarea>
+    <div class="row">
+      <div>
+        <textarea id="description_cur" name="description_cur" rows="6" placeholder="Opcional…">{{ old('description_cur', $event->description_cur) }}</textarea>
+      </div>
+      <div>
+        <div class="src-block">
+          <div><strong>Origen (HTML):</strong></div>
+          <div id="description_src_txt" style="max-height:180px; overflow:auto; background:white; padding:6px; border:1px solid #eee">
+            {!! $event->description_src !!}
+          </div>
+          <button type="button" class="btn copy" data-target="#description_cur" data-src="#description_src_txt" data-html="1">Usar como curado</button>
+        </div>
+      </div>
+    </div>
 
     <div class="row">
       <div>
         <label>Municipio (curado)</label>
-        <input type="text" name="municipality_cur" value="{{ old('municipality_cur', $event->municipality_cur) }}">
+        <input id="municipality_cur" type="text" name="municipality_cur" value="{{ old('municipality_cur', $event->municipality_cur) }}">
+        <div class="src-block">
+          <div><strong>Origen:</strong> <span id="municipality_src_txt">{{ $event->municipality_src }}</span></div>
+          <button type="button" class="btn copy" data-target="#municipality_cur" data-src="#municipality_src_txt">Usar como curado</button>
+        </div>
       </div>
       <div>
         <label>Territorio (curado)</label>
-        <input type="text" name="territory_cur" value="{{ old('territory_cur', $event->territory_cur) }}">
+        <input id="territory_cur" type="text" name="territory_cur" value="{{ old('territory_cur', $event->territory_cur) }}">
+        <div class="src-block">
+          <div><strong>Origen:</strong> <span id="territory_src_txt">{{ $event->territory_src }}</span></div>
+          <button type="button" class="btn copy" data-target="#territory_cur" data-src="#territory_src_txt">Usar como curado</button>
+        </div>
       </div>
     </div>
 
@@ -82,13 +118,13 @@
 
     <div style="margin-top:16px">
       <button class="btn btn-primary" type="submit">Guardar cambios</button>
-      <a class="btn" href="{{ route('admin.events.index', ['key'=>request('key')]) }}">Volver</a>
+      <a class="btn" href="{{ route('admin.events.index') }}">Volver</a>
     </div>
   </form>
 
   <hr style="margin:24px 0">
 
-  <h3>Datos de origen</h3>
+  <h3>Datos de origen (solo lectura)</h3>
   <ul>
     <li><strong>Título (origen):</strong> {{ $event->title_src }}</li>
     <li><strong>Municipio (origen):</strong> {{ $event->municipality_src }}</li>
@@ -97,5 +133,21 @@
     <li><strong>Organizador (origen):</strong> {{ $event->organizer_src }}</li>
     <li><strong>URL fuente:</strong> <a href="{{ $event->source_url }}" target="_blank">{{ $event->source_url }}</a></li>
   </ul>
+
+  <script>
+    // Copiar desde origen al campo curado
+    document.querySelectorAll('.copy').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = document.querySelector(btn.dataset.target);
+        const srcEl  = document.querySelector(btn.dataset.src);
+        if (!target || !srcEl) return;
+        const useHtml = btn.dataset.html === '1';
+        const value = useHtml ? srcEl.innerHTML : srcEl.textContent;
+        if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') {
+          target.value = value.trim();
+        }
+      });
+    });
+  </script>
 </body>
 </html>

@@ -51,6 +51,8 @@ class EventUpserter
                 'image_url'        => Arr::get($dto,'image_url'),
                 'is_canceled'      => (bool) Arr::get($dto,'is_canceled', false),
                 'last_source_at'   => $toCarbon(Arr::get($dto,'last_source_at')),
+                'type_src'      => Arr::get($dto,'type_src'),
+                'type_code_src' => Arr::get($dto,'type_code_src'),
             ];
 
             if (!$event) {

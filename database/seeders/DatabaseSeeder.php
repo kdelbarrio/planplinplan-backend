@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
         AdminUserSeeder::class,
         ProvincesSeeder::class,
+        KulturklikEventTypesSeeder::class,
         ]);
         // User::factory(10)->create();
 
