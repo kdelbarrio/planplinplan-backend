@@ -1,11 +1,25 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h1 class="font-semibold text-xl text-gray-800 leading-tight">
-            Listado de eventos importados
-        </h1>
-    </x-slot>
-<div class="py-12">
-  <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin · Events</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:20px;}
+    table{border-collapse:collapse; width:100%}
+    th,td{border-bottom:1px solid #eee; padding:8px; text-align:left; vertical-align:top}
+    .pill{padding:2px 8px; border-radius:999px; font-size:12px; background:#eef}
+    .ok{color:green}
+    .btn{display:inline-block; padding:6px 10px; border:1px solid #ccc; border-radius:6px; text-decoration:none}
+    .btn-primary{background:#1f6feb; color:#fff; border-color:#1f6feb}
+    .toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    .bulk{display:flex; gap:8px; align-items:center}
+  </style>
+</head>
+<body>
+  <h1>Eventos (admin)</h1>
+
+  @if(session('ok')) <div class="ok">{{ session('ok') }}</div>@endif
 
   <div class="info">
     <p>Total de eventos: {{ $events->total() }}. </p>
@@ -141,5 +155,5 @@
       }
     });
   </script>
-</div>
-</x-app-layout>
+</body>
+</html>

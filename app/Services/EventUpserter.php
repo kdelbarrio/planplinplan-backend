@@ -53,6 +53,7 @@ class EventUpserter
                 'last_source_at'   => $toCarbon(Arr::get($dto,'last_source_at')),
                 'type_src'      => Arr::get($dto,'type_src'),
                 'type_code_src' => Arr::get($dto,'type_code_src'),
+                'is_indoor'        => (bool) Arr::get($dto,'is_indoor', false), 
             ];
 
             if (!$event) {

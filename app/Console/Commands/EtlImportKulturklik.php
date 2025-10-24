@@ -10,6 +10,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Carbon;
+use Artisan;
 
 class EtlImportKulturklik extends Command
 {
@@ -26,7 +27,8 @@ class EtlImportKulturklik extends Command
 
     protected $description = 'Importa eventos desde Kulturklik (Euskadi API) con paginación, retry/backoff y registro en etl_runs/etl_errors';
     protected array $provinceMap = []; // province_id => name_es
-
+    protected array $outdoorTypeCodes = [8,13,15,16]; // feria(8), festival(13), otro(15), fiestas(16)
+    
     public function handle(EventUpserter $upserter): int
     {
         $this->provinceMap = Province::query()
@@ -106,7 +108,7 @@ class EtlImportKulturklik extends Command
                 }
 
             } else {
-                // ====== NUEVO MODO: 60 DÍAS USANDO byMonth ======
+                // ====== MODO: 60 DÍAS USANDO byMonth ======
                 $this->info(sprintf(
                     "Importando %s [byMonth 60d] ventana %s → %s (UTC) (_elements=%d)",
                     $source, $winStart->toDateString(), $winEnd->toDateString(), $elements
@@ -170,6 +172,13 @@ class EtlImportKulturklik extends Command
             }
 
             $this->line("Resumen → total: {$run->total} | inserted: {$run->inserted} | updated: {$run->updated} | errors: {$run->errors}");
+            
+            Artisan::call('etl:resolve-event-types', [
+            '--source' => 'kulturklik',
+            '--min-confidence' => 90,
+            '--chunk' => 1000,
+            ]);
+            $this->info(trim(Artisan::output()));
             return self::SUCCESS;
 
         } finally {
@@ -256,7 +265,7 @@ class EtlImportKulturklik extends Command
                 }
 
                 $dto = $this->mapKulturklikItemToDto($item, $source);
-
+\Log::debug('kulturklik dto', ['id' => $item['id'] ?? null, 'type' => $item['type'] ?? null, 'dto' => $dto]);
                 // Asegura last_source_at por si no viene
                 if (empty($dto['last_source_at'])) {
                     $dto['last_source_at'] = now()->toIso8601String();
@@ -317,6 +326,11 @@ class EtlImportKulturklik extends Command
             ? ($this->provinceMap[$provCode] ?? null)
             : null;
 
+        // Tipo de evento: usar el código numérico para decidir is_indoor
+        //$typeCode = (int) Arr::get($item, 'type', 0); // seguro: 0 si no existe
+        $typeCode = (int) Arr::get($item, 'type', 0);
+        $isIndoor = in_array($typeCode, $this->outdoorTypeCodes, true) ? 0 : 1;
+
         return [
             'source'        => $source,
             'source_id'     => Arr::get($item, 'id'),
@@ -338,11 +352,13 @@ class EtlImportKulturklik extends Command
             'source_url'    => Arr::get($item, 'sourceUrlEs') ?? Arr::get($item, 'sourceUrlEu'),
             'image_url'     => $imageUrl,
             'is_canceled'   => false,
+            'is_indoor'     => $isIndoor,
             'last_source_at'=> Arr::get($item, 'publicationDate'),
 
             // 👇 AÑADIDOS DE TIPOLOGÍA (solo-ORIGEN)
             'type_src'      => Arr::get($item, 'typeEs') ?? Arr::get($item, 'typeEu'),
-            'type_code_src' => (string) Arr::get($item, 'type'),
+            //'type_code_src' => (string) Arr::get($item, 'type'),
+            'type_code_src' => $typeCode,
 
         ];
     }
@@ -369,3 +385,5 @@ class EtlImportKulturklik extends Command
         return mb_strimwidth($str, 0, $max, '…');
     }
 }
+
+
