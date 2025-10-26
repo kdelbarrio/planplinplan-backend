@@ -33,9 +33,7 @@ Route::middleware('auth')->group(function () {
     $request->validate(['etl' => 'required|string']);
 
     $map = [
-        //'kulturklik'   => ['command' => 'etl:import', 'params' => ['--source' => 'kulturklik']],
-        'kulturklik-100'   => ['command' => 'etl:import', 'params' => ['--mode' => 'upcoming','--max' => '2']],
-        'kulturklik-200'   => ['command' => 'etl:import', 'params' => ['--mode' => 'upcoming','--max' => '4']],
+        'kulturklik'   => ['command' => 'etl:import', 'params' => ['--source' => 'kulturklik']],
         'experiencias' => ['command' => 'etl:import-experiences', 'params' => []],
     ];
 

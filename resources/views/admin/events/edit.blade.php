@@ -5,133 +5,158 @@
         </h1>
     </x-slot>
 <div class="py-12">
+   
   <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <x-auth-session-status class="mb-4" :status="session('ok')" />
     @if($errors->any())
         <div style="color:#b00; margin-bottom:8px">
           <strong>Revisa:</strong> {{ implode(' · ', $errors->all()) }}
         </div>
       @endif
 
+
   
 
-  <p><small>Fuente: {{ $event->source }} #{{ $event->source_id }}</small></p>
-  <p><small>Fecha: {{ $event->starts_at?->timezone('Europe/Madrid')->format('Y-m-d H:i') ?? ''}}</small></p>
+  <p>Fuente: {{ $event->source }} #{{ $event->source_id }}</p>
+
 
   <form method="post" action="{{ route('admin.events.update', $event) }}">
     @csrf
     @method('PUT')
 
 
-    <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-    <div class="max-w-xl">
-    {{-- Título --}}
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label>Título (curado)</label>
-        <input id="title_cur" type="text" name="title_cur" value="{{ old('title_cur', $event->title_cur) }}" placeholder="Opcional…">
-        <div class="field-help">Se mostrará este si existe; si no, el de origen.</div>
-      </div>
-      <div>
-        <div class="src-block">
-          <div><strong>Título:</strong> <span id="title_src_txt">{{ $event->title_src }}</span></div>
-          <button type="button" class="btn copy" data-target="#title_cur" data-src="#title_src_txt">Usar como curado</button>
-        </div>
-      </div>
-    </div>
+  <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+  <div class="flex justify-end gap-4 mb-4">  
+    <p>* Se mostrará el texto curado si existe; si no, el de origen.</p>
+  </div>
 
+    {{-- Título --}}    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-4">
+      <div>
+        <div><strong>Título:</strong> <span id="title_src_txt">{{ $event->title_src }}</span></div>
+        <button type="button" class="copy text-gray-600 underline" data-target="#title_cur" data-src="#title_src_txt">Usar como curado</button>
+      </div>
+
+      <div>
+        <x-input-label>Título (curado)</x-input-label>
+        <x-text-input class="w-full" id="title_cur" type="text" name="title_cur" value="{{ old('title_cur', $event->title_cur) }}" placeholder="Opcional…" />
+        
+      </div>
+
+    </div>
 
     {{-- Descripción --}}
-
    
-    <div class="row">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-4">
       <div>
-        <label>Descripción (curada)</label>
-        <textarea id="description_cur" name="description_cur" rows="6" placeholder="Opcional…">{{ old('description_cur', $event->description_cur) }}</textarea>
-      </div>
-      <div>
-        <div class="src-block">
           <div><strong>Descripción (HTML):</strong></div>
-          <div id="description_src_txt" style="max-height:180px; overflow:auto; background:white; padding:6px; border:1px solid #eee">
+          <div id="description_src_txt" class="border p-2 rounded-md shadow-sm max-h-32 overflow-y-auto bg-gray-50">
             {!! $event->description_src !!}
           </div>
-          <button type="button" class="btn copy" data-target="#description_cur" data-src="#description_src_txt" data-html="1">Usar como curado</button>
-        </div>
+          <button type="button" class="copy text-gray-600 underline" data-target="#description_cur" data-src="#description_src_txt" data-html="1">Usar como curado</button>
+      </div>  
+    
+      <div>
+        <x-input-label>Descripción (curada) </x-input-label>
+        <textarea class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" id="description_cur" name="description_cur"  placeholder="Opcional…">{{ old('description_cur', $event->description_cur) }}</textarea>
       </div>
+      
     </div>
 
-    <div class="row">
-      <div>
-        <label>Municipio (curado)</label>
-        <input id="municipality_cur" type="text" name="municipality_cur" value="{{ old('municipality_cur', $event->municipality_cur) }}">
-        <div class="src-block">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-4">
+      
+        <div>
           <div><strong>Municipio:</strong> <span id="municipality_src_txt">{{ $event->municipality_src }}</span></div>
-          <button type="button" class="btn copy" data-target="#municipality_cur" data-src="#municipality_src_txt">Usar como curado</button>
+          <button type="button" class="copy text-gray-600 underline" data-target="#municipality_cur" data-src="#municipality_src_txt">Usar como curado</button>
         </div>
-      </div>
-      <div>
-        <label>Territorio (curado)</label>
-        <input id="territory_cur" type="text" name="territory_cur" value="{{ old('territory_cur', $event->territory_cur) }}">
-        <div class="src-block">
+        <div>
+          <x-input-label>Municipio (curado)</x-input-label>
+          <x-text-input id="municipality_cur" type="text" name="municipality_cur" value="{{ old('municipality_cur', $event->municipality_cur) }}" />
+        </div>
+    </div>
+  
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-4">
+      
+        <div>
           <div><strong>Territorio:</strong> <span id="territory_src_txt">{{ $event->territory_src }}</span></div>
-          <button type="button" class="btn copy" data-target="#territory_cur" data-src="#territory_src_txt">Usar como curado</button>
+          <button type="button" class="copy text-gray-600 underline" data-target="#territory_cur" data-src="#territory_src_txt">Usar como curado</button>
         </div>
-      </div>
-    </div>
-    </div>
-    </div>
-
-    <div class="p-4 mt-6 sm:p-8 bg-white shadow sm:rounded-lg">
-    <div class="max-w-xl">
-    <div class="row">
-      <div>
-        <label>Edad mínima</label>
-        <input type="text" name="age_min" value="{{ old('age_min', $event->age_min) }}">
-      </div>
-      <div>
-        <label>Edad máxima</label>
-        <input type="text" name="age_max" value="{{ old('age_max', $event->age_max) }}">
-      </div>
+        <div>
+          <x-input-label>Territorio (curado)</x-input-label>
+          <x-text-input id="territory_cur" type="text" name="territory_cur" value="{{ old('territory_cur', $event->territory_cur) }}" />
+        </div>
     </div>
 
-    <label>Etiquetas de accesibilidad (coma o nueva línea)</label>
-    <textarea name="accessibility_tags" rows="3" placeholder="ramp, subtitles, sign-language">{{ old('accessibility_tags', is_array($event->accessibility_tags) ? implode(', ', $event->accessibility_tags) : '') }}</textarea>
+    
+  </div>
 
-    <div class="row">
+  <div class="p-4 mt-6 sm:p-8 bg-white shadow sm:rounded-lg">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
       <div>
-        <label>Moderación</label>
-        <select name="moderation">
-          @foreach(['pending','approved','rejected'] as $s)
+        <x-input-label>Edad mínima</x-input-label>
+        <x-text-input type="text" name="age_min" value="{{ old('age_min', $event->age_min) }}" />
+      </div>
+      <div>
+        <x-input-label>Edad máxima</x-input-label>
+        <x-text-input type="text" name="age_max" value="{{ old('age_max', $event->age_max) }}" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div>
+        <x-input-label>Etiquetas de accesibilidad (coma o nueva línea)</x-input-label>
+        <x-text-input name="accessibility_tags"  placeholder="ramp, subtitles, sign-language" value="{{ old('accessibility_tags', is_array($event->accessibility_tags) ? implode(', ', $event->accessibility_tags) : '') }}" />
+      </div>
+      <div>
+        <x-input-label>Indoor</x-input-label>
+        <x-text-select name="is_indoor">
+          <option value="1" @selected(old('is_indoor', (int)$event->is_indoor)===1)>Sí</option>
+          <option value="0" @selected(old('is_indoor', (int)$event->is_indoor)===0)>No</option>
+        </x-text-select>
+      </div>
+
+    
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div>
+        <x-input-label>Moderación</x-input-label>
+        <x-text-select name="moderation">
+          @foreach(['pendiente','aprobado','rechazado'] as $s)
             <option value="{{ $s }}" @selected(old('moderation', $event->moderation)===$s)>{{ $s }}</option>
           @endforeach
-        </select>
+        </x-text-select>
       </div>
       <div>
-        <label>Visible</label>
-        <select name="visible">
+        <x-input-label>Visible</x-input-label>
+        <x-text-select name="visible">
           <option value="1" @selected(old('visible', (int)$event->visible)===1)>Sí</option>
           <option value="0" @selected(old('visible', (int)$event->visible)===0)>No</option>
-        </select>
+        </x-text-select>
       </div>
     </div>
-    </div>
-    </div>
-    <div class="flex items-center gap-4 mt-6">
+  </div>
+  
+    <div class="flex justify-end gap-4 mt-6">
+      <a class="text-gray-600 underline mx-4" href="{{ route('admin.events.index') }}">Volver</a>  
       <x-primary-button type="submit">Guardar cambios</x-primary-button>
-      <a class="text-gray-600" href="{{ route('admin.events.index') }}">Volver</a>
     </div>
   </form>
 
-  <hr style="margin:24px 0">
+  <hr style="my-8">
   <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
   <div class="max-w-xl">
-  <h3>Datos de origen (solo lectura)</h3>
+  <h2 class="mb-4">Datos de origen (solo lectura)</h2>
   <ul>
-    <li><strong>Título (origen):</strong> {{ $event->title_src }}</li>
-    <li><strong>Municipio (origen):</strong> {{ $event->municipality_src }}</li>
-    <li><strong>Territorio (origen):</strong> {{ $event->territory_src }}</li>
-    <li><strong>Precio (origen):</strong> {{ $event->price_desc_src }}</li>
-    <li><strong>Organizador (origen):</strong> {{ $event->organizer_src }}</li>
+    <li><strong>Título:</strong> {{ $event->title_src }}</li>
+    <li><strong>Tipo de evento:</strong> {{ $event->eventType?->name ?? '—' }}
+    <li><strong>Fecha inicio:</strong> {{ $event->starts_at?->timezone('Europe/Madrid')->format('d-m-Y H:i') ?? ''}}</li>
+    <li><strong>Fecha fin:</strong> {{ $event->ends_at?->timezone('Europe/Madrid')->format('d-m-Y H:i') ?? ''}}</li>
+    <li><strong>Municipio:</strong> {{ $event->municipality_src }}</li>
+    <li><strong>Territorio:</strong> {{ $event->territory_src }}</li>
+    <li><strong>Precio:</strong> {{ $event->price_desc_src }}</li>
+    <li><strong>Organizador:</strong> {{ $event->organizer_src }}</li>
     <li><strong>URL fuente:</strong> <a href="{{ $event->source_url }}" target="_blank">{{ $event->source_url }}</a></li>
   </ul>
 </div>

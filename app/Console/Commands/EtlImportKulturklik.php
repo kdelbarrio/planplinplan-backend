@@ -19,7 +19,7 @@ class EtlImportKulturklik extends Command
         {--from=1 : Página inicial (_page)}
         {--to= : Página final (por defecto, hasta totalPages)}
         {--max= : Máximo de páginas a importar}
-        {--elements=20 : Tamaño de página (_elements)}
+        {--elements=50 : Tamaño de página (_elements)}
         {--timeout=20 : Timeout HTTP en segundos}
         {--retries=3 : Reintentos por petición}
         {--sleep=500 : Backoff base en ms (exponencial)}
@@ -62,7 +62,7 @@ class EtlImportKulturklik extends Command
 
         try {
             if ($mode === 'upcoming') {
-                // ====== MODO CLÁSICO: UPCOMING (compatible con tu flujo actual) ======
+                // ====== MODO UPCOMING  ======
                 $baseUrl = rtrim(env('KULTURKLIK_API', 'https://api.euskadi.eus/culture/events/v1.0/events/upcoming'), '/');
 
                 // Primera página para leer totalPages
@@ -265,7 +265,7 @@ class EtlImportKulturklik extends Command
                 }
 
                 $dto = $this->mapKulturklikItemToDto($item, $source);
-\Log::debug('kulturklik dto', ['id' => $item['id'] ?? null, 'type' => $item['type'] ?? null, 'dto' => $dto]);
+                //\Log::debug('kulturklik dto', ['id' => $item['id'] ?? null, 'type' => $item['type'] ?? null, 'dto' => $dto]);
                 // Asegura last_source_at por si no viene
                 if (empty($dto['last_source_at'])) {
                     $dto['last_source_at'] = now()->toIso8601String();
@@ -282,12 +282,14 @@ class EtlImportKulturklik extends Command
                         : (string)$event->starts_at)
                     : 'sin fecha';
 
-                $this->line(sprintf('✓ [%s] %s (%s) → %s',
+                if ($this->output->isVerbose()) {
+                    $this->line(sprintf('✓ [%s] %s (%s) → %s',
                     $source,
                     $event->title_cur ?: $event->title_src,
                     $whenTxt,
                     $event->import_status
-                ));
+                    ));
+                }    
             } catch (\Throwable $e) {
                 $errors++;
                 $externalId = is_array($item) ? (Arr::get($item, 'id') ?? null) : null;

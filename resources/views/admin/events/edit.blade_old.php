@@ -102,7 +102,7 @@
       <div>
         <label>Moderación</label>
         <select name="moderation">
-          @foreach(['pending','approved','rejected'] as $s)
+          @foreach(['pendiente','aprovado','rechazado'] as $s)
             <option value="{{ $s }}" @selected(old('moderation', $event->moderation)===$s)>{{ $s }}</option>
           @endforeach
         </select>

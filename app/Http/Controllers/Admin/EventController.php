@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\EventType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
@@ -11,11 +12,15 @@ class EventController extends Controller
 {
     public function index(Request $request)
     {
-        $status = $request->query('status'); // pending|approved|rejected
+        $status = $request->query('status'); // pendiente|aprobado|rechazado
         $q      = trim((string)$request->query('q', ''));
         $per    = min(max((int)$request->query('per_page', 20), 1), 100);
 
+        $eventTypeId = $request->filled('event_type_id') ? (int)$request->integer('event_type_id') : null;
+        $typeQ       = trim((string)$request->query('type_q', '')); // opcional: buscar por nombre/alias
+
         $events = Event::query()
+            ->with('eventType')
             ->when($status, fn($q2) => $q2->where('moderation', $status))
             ->when($q, function ($qq) use ($q) {
                 $qq->where(function ($w) use ($q) {
@@ -27,16 +32,42 @@ class EventController extends Controller
                       ->orWhere('territory_src', 'like', "%{$q}%");
                 });
             })
+            
+            ->when($eventTypeId, fn($qq) => $qq->where('event_type_id', $eventTypeId))
+            // opcional: coincidir por nombre de tipo o alias
+            ->when($typeQ !== '', function ($qq) use ($typeQ) {
+                $needle = "%{$typeQ}%";
+                $qq->where(function ($w) use ($needle) {
+                    $w->whereHas('eventType', function ($t) use ($needle) {
+                        $t->where('name', 'like', $needle)
+                          ->orWhereHas('aliases', fn($a) => $a->where('alias', 'like', $needle));
+                    });
+                });
+            })
+
             ->orderByDesc('updated_at')
             ->paginate($per)
             ->appends($request->query());
 
-        return view('admin.events.index', compact('events', 'status', 'q'));
+        // lista para el <select> de tipos
+        $types = EventType::orderBy('name')->get(['id','name']);
+        
+        return view('admin.events.index', compact('events', 'status', 'q', 'types'));
     }
 
+    //public function edit(Event $event)
+    //{
+    //    return view('admin.events.edit', compact('event'));
+    //}
     public function edit(Event $event)
     {
-        return view('admin.events.edit', compact('event'));
+        // para mostrar alias del tipo seleccionado
+        $event->load('eventType.aliases');
+        
+        // lista para el <select> de tipos
+        $types = EventType::orderBy('name')->get(['id','name']);
+
+        return view('admin.events.edit', compact('event', 'types'));
     }
 
     public function update(Request $request, Event $event)
@@ -51,8 +82,10 @@ class EventController extends Controller
             'age_min'          => ['nullable','integer','min:0','max:120'],
             'age_max'          => ['nullable','integer','min:0','max:120'],
             'accessibility_tags' => ['nullable','string'], // se parsea abajo a array
-            'moderation'       => ['required','in:pending,approved,rejected'],
+            'moderation'       => ['required','in:pendiente,aprovado,rechazado'],
+            'is_indoor'          => ['required','boolean'],
             'visible'          => ['required','boolean'],
+            'event_type_id'      => ['nullable','exists:event_types,id'],
         ]);
 
         // Parsear accessibility_tags: "ramp,subtitles" -> ["ramp","subtitles"]
@@ -81,6 +114,7 @@ class EventController extends Controller
             'age_max'          => Arr::get($data, 'age_max'),
             'accessibility_tags' => $tagsArray,
             'moderation'       => $data['moderation'],
+            'is_indoor'          => (bool)$data['is_indoor'],
             'visible'          => (bool)$data['visible'],
         ])->save();
 
@@ -110,13 +144,13 @@ class EventController extends Controller
     $updates = [];
     switch ($data['action']) {
         case 'approve':
-            $updates = ['moderation' => 'approved'];
+            $updates = ['moderation' => 'aprobado'];
             break;
         case 'publish':
             $updates = ['visible' => true];
             break;
         case 'approve_publish':
-            $updates = ['moderation' => 'approved', 'visible' => true];
+            $updates = ['moderation' => 'aprobado', 'visible' => true];
             break;
         case 'hide':
             $updates = ['visible' => false];
@@ -129,7 +163,7 @@ class EventController extends Controller
     }
 
     return redirect()
-        ->route('admin.events.index', $request->only('status','q','per_page','page'))
+        ->route('admin.events.index', $request->only('status','q','per_page','page','event_type_id','type_q'))
         ->with('ok', "Acción '{$data['action']}' aplicada a {$affected} eventos");
     }
 

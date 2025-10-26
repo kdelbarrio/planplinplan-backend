@@ -21,6 +21,7 @@ class Event extends Model
         'accessibility_tags',
         'moderation',
         'visible',
+        'is_indoor',
     ];
 
     protected $casts = [
@@ -29,6 +30,7 @@ class Event extends Model
         'last_source_at' => 'datetime',
         'is_canceled'    => 'boolean',
         'visible'        => 'boolean',
+        'is_indoor'      => 'boolean',
         'accessibility_tags'  => 'array',
     ];
     public function eventType()

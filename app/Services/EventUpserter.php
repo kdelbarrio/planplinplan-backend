@@ -63,7 +63,7 @@ class EventUpserter
                     'source'        => $dto['source'],
                     'source_id'     => $dto['source_id'] ?? null,
                     'checksum'      => $dto['checksum']   ?? null,
-                    'moderation'    => 'pending',   // entra pendiente
+                    'moderation'    => 'pendiente',   // entra pendiente
                     'visible'       => false,
                     'import_status' => 'new',
                 ] + $srcData);
@@ -88,7 +88,7 @@ class EventUpserter
                 if ($changed) {
                     $event->import_status = 'updated';
 
-                    if ($event->moderation === 'pending' && $this->autoVisible($event)) {
+                    if ($event->moderation === 'pendiente' && $this->autoVisible($event)) {
                         $event->visible = true;
                     }
 
