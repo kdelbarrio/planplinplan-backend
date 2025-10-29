@@ -43,7 +43,7 @@ return new class extends Migration {
 
             // Estados y reglas de negocio
             $table->boolean('is_canceled')->default(false)->index();
-            $table->enum('moderation', ['pending','approved','rejected'])->default('pending')->index();
+            $table->enum('moderation', ['pendiente','aprobado','rechazado'])->default('pendiente')->index();
             $table->boolean('visible')->default(false)->index();           // solo publica visible = true
             $table->enum('import_status', ['new','updated','unchanged','rejected'])->default('new')->index();
 

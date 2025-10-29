@@ -5,7 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Admin\ExperiencesImportController;
 use Illuminate\Http\Request;                       // <-- añadido
-use Illuminate\Support\Facades\Artisan; 
+use Illuminate\Support\Facades\Artisan;
+use App\Http\Controllers\ApiDocsController;
 
 //Route::get('/', function () {
 //    return view('welcome');
@@ -17,6 +18,8 @@ Route::get('/', [AdminEventController::class, 'index'])
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/api/docs', [ApiDocsController::class, 'show'])->name('api.docs');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

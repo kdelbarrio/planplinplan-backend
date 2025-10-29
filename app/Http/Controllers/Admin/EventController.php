@@ -82,7 +82,7 @@ class EventController extends Controller
             'age_min'          => ['nullable','integer','min:0','max:120'],
             'age_max'          => ['nullable','integer','min:0','max:120'],
             'accessibility_tags' => ['nullable','string'], // se parsea abajo a array
-            'moderation'       => ['required','in:pendiente,aprovado,rechazado'],
+            'moderation'       => ['required','in:pendiente,aprobado,rechazado'],
             'is_indoor'          => ['required','boolean'],
             'visible'          => ['required','boolean'],
             'event_type_id'      => ['nullable','exists:event_types,id'],

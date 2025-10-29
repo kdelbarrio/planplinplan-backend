@@ -45,11 +45,6 @@ class EventResource extends JsonResource
             'last_source_at'=> $toIso($this->last_source_at),
             'created_at'    => $toIso($this->created_at),
             'updated_at'    => $toIso($this->updated_at),
-            'type_src'      => $this->type_src,
-            'age_min'       => $this->age_min,
-            'age_max'       => $this->age_max,
-            'is_indoor'     => (bool) $this->is_indoor,
-            'accessibility_tag' => $this->accessibility_tag, // array/string según cast
         ];
     }
 }
