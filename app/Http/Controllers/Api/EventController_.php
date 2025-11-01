@@ -17,27 +17,30 @@ class EventController extends Controller
      *  - from (YYYY-MM-DD)
      *  - to (YYYY-MM-DD)
      *  - q (texto: busca en título y descripción cur/src)
-     *  - per_page (int, 10..100)
+     *  - per_page (int, 1..400)
      *  - include_past (bool, por defecto false → solo futuros)
      */
     public function index(Request $request)
     {
-        $q           = trim((string) $request->query('q', ''));
-        $territory   = $request->query('territory');
-        $municipality= $request->query('municipality');
-        $from        = $request->query('from'); // YYYY-MM-DD (local)
-        $to          = $request->query('to');   // YYYY-MM-DD (local)
-        $includePast = filter_var($request->query('include_past', false), FILTER_VALIDATE_BOOL);
-        $perPage     = min(max((int) $request->query('per_page', 20), 1), 100);
+        $q            = trim((string) $request->query('q', ''));
+        $territory    = $request->query('territory');
+        $municipality = $request->query('municipality');
+        $from         = $request->query('from'); // YYYY-MM-DD (local)
+        $to           = $request->query('to');   // YYYY-MM-DD (local)
+        $includePast  = filter_var($request->query('include_past', false), FILTER_VALIDATE_BOOL);
+
+        // Permitir hasta 400 por página (con mínimo 1)
+        $perPage = (int) $request->query('per_page', 20);
+        $perPage = max(1, min($perPage, 400));
 
         $events = Event::query()
             // públicos por defecto
             ->where('visible', true)
             ->where('is_canceled', false)
             ->when(!$includePast, function ($q) {
-            $startLocal = \Illuminate\Support\Carbon::now('Europe/Madrid')->startOfDay()->utc();
-            $q->where('ends_at', '>=', $startLocal);
-})
+                $startLocal = \Illuminate\Support\Carbon::now('Europe/Madrid')->startOfDay()->utc();
+                $q->where('ends_at', '>=', $startLocal);
+            })
             // filtros territoriales
             ->when($territory, function ($q) use ($territory) {
                 $q->where(function ($qq) use ($territory) {
@@ -51,7 +54,7 @@ class EventController extends Controller
                        ->orWhere('municipality_src', $municipality);
                 });
             })
-            // rango de fechas (inclusive)
+            // rango de fechas (inclusive, timezone local → UTC)
             ->when($from, function ($q) use ($from) {
                 $q->where('starts_at', '>=', \Illuminate\Support\Carbon::parse($from.' 00:00:00', 'Europe/Madrid')->utc());
             })
@@ -86,6 +89,11 @@ class EventController extends Controller
                 'visible','is_canceled','moderation',
                 'source','source_id','last_source_at',
                 'created_at','updated_at',
+                'type_src',     // string o enum
+                'age_min',        // int
+                'age_max',        // int
+                'is_indoor',      // bool
+                'accessibility_tags',  // json | string
             ])
             ->paginate($perPage);
 
@@ -97,9 +105,7 @@ class EventController extends Controller
      */
     public function show(Event $event)
     {
-        // Para la API pública, puedes bloquear acceso a eventos no visibles:
         abort_unless($event->visible && !$event->is_canceled, 404);
-
         return new EventResource($event);
     }
 }

@@ -30,8 +30,11 @@ class Event extends Model
         'last_source_at' => 'datetime',
         'is_canceled'    => 'boolean',
         'visible'        => 'boolean',
+        'type_src'       => 'string',
         'is_indoor'      => 'boolean',
         'accessibility_tags'  => 'array',
+        'age_min'        => 'integer', 
+        'age_max'        => 'integer',
     ];
     public function eventType()
     {

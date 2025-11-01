@@ -29,6 +29,15 @@ class EventController extends Controller
         $to           = $request->query('to');   // YYYY-MM-DD (local)
         $includePast  = filter_var($request->query('include_past', false), FILTER_VALIDATE_BOOL);
 
+        // nuevos filtros
+        $typeSrc           = $request->query('type_src'); // texto
+        $ageMin            = $request->query('age_min');  // número (int)
+        $ageMax            = $request->query('age_max');  // número (int)
+        $accessibilityTags = trim((string) $request->query('accessibility_tags', '')); // texto, puede ser CSV
+        $isIndoorRaw       = $request->query('is_indoor', null); // bool (true/false) o null
+        $isIndoor          = is_null($isIndoorRaw) ? null : filter_var($isIndoorRaw, FILTER_VALIDATE_BOOL);
+
+
         // Permitir hasta 400 por página (con mínimo 1)
         $perPage = (int) $request->query('per_page', 20);
         $perPage = max(1, min($perPage, 400));
@@ -61,6 +70,32 @@ class EventController extends Controller
             ->when($to, function ($q) use ($to) {
                 $q->where('starts_at', '<=', \Illuminate\Support\Carbon::parse($to.' 23:59:59', 'Europe/Madrid')->utc());
             })
+
+            // filtros nuevos: tipo, edad, accesibilidad, interior/exterior
+           ->when($typeSrc, function ($q) use ($typeSrc) {
+               $q->where('type_src', $typeSrc);
+           })
+           ->when($ageMin !== null && $ageMin !== '', function ($q) use ($ageMin) {
+               // filtra eventos con age_min >= ageMin 
+               $q->where('age_min', '>=', (int) $ageMin);
+           })
+           ->when($ageMax !== null && $ageMax !== '', function ($q) use ($ageMax) {
+               // filtra eventos con age_max <= ageMax 
+               $q->where('age_max', '<=', (int) $ageMax);
+           })
+           ->when($accessibilityTags, function ($q) use ($accessibilityTags) {
+               $tags = array_filter(array_map('trim', explode(',', $accessibilityTags)));
+               $q->where(function ($qq) use ($tags) {
+                   foreach ($tags as $tag) {
+                       $qq->orWhere('accessibility_tags', 'like', "%{$tag}%");
+                   }
+               });
+           })
+           ->when(!is_null($isIndoor), function ($q) use ($isIndoor) {
+               $q->where('is_indoor', $isIndoor);
+           })
+
+
             // búsqueda de texto en cur/src
             ->when($q, function ($query) use ($q) {
                 $query->where(function ($qq) use ($q) {
