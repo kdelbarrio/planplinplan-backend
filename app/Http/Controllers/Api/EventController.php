@@ -31,6 +31,7 @@ class EventController extends Controller
 
         // nuevos filtros
         $typeSrc           = $request->query('type_src'); // texto
+        $typeSlug          = $request->query('type_slug') ?? $request->query('typeSlug'); // slug de EventType
         $ageMin            = $request->query('age_min');  // número (int)
         $ageMax            = $request->query('age_max');  // número (int)
         $accessibilityTags = trim((string) $request->query('accessibility_tags', '')); // texto, puede ser CSV
@@ -39,7 +40,7 @@ class EventController extends Controller
 
 
         // Permitir hasta 400 por página (con mínimo 1)
-        $perPage = (int) $request->query('per_page', 20);
+        $perPage = (int) $request->query('per_page', 50);
         $perPage = max(1, min($perPage, 400));
 
         $events = Event::query()
@@ -75,6 +76,11 @@ class EventController extends Controller
            ->when($typeSrc, function ($q) use ($typeSrc) {
                $q->where('type_src', $typeSrc);
            })
+            ->when($typeSlug, function ($q) use ($typeSlug) {
+                $q->whereHas('eventType', function ($qq) use ($typeSlug) {
+                     $qq->where('slug', $typeSlug);
+                });
+              })
            ->when($ageMin !== null && $ageMin !== '', function ($q) use ($ageMin) {
                // filtra eventos con age_min >= ageMin 
                $q->where('age_min', '>=', (int) $ageMin);

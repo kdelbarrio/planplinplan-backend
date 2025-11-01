@@ -62,6 +62,7 @@
                   ['from','date YYYY-MM-DD','from=2025-11-01','Incluye eventos que empiezan desde esa fecha (00:00 Europe/Madrid).'],
                   ['to','date YYYY-MM-DD','to=2025-11-30','Incluye eventos que empiezan hasta esa fecha (23:59 Europe/Madrid).'],
                   ['type_src','string','type_src=teatro','filtra por tipo de evento'],
+                  ['type_slug','string','type_slug=experiencias-top','filtra por slug de tipo de evento'],
                   ['age_min','int','age_min=3','filtra por edad mínima'],
                   ['age_max','int','age_max=12','filtra por edad máxima'],
                   ['accessibility_tags','string','accessibility_tags=rampa,baño%20adaptado','filtra por etiquetas de accesibilidad'],
