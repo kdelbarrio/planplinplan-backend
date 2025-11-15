@@ -4,6 +4,18 @@ return [
 
     'jobs' => [
 
+         // Variante “kulturklik proximos 60 dias”
+        'kulturklik' => [
+            'name'        => 'Kulturklik (próximos 60 días)',
+            'source'      => 'Euskadi - Kulturklik',
+            'description' => 'Modo 60 dias',
+            'command'     => 'etl:import',
+            'params'      => [
+                'source'  => 'kulturklik',
+                '--mode'  => '60days',
+            ],
+        ],
+        
         // Variante “kulturklik-100”
         'kulturklik-100' => [
             'name'        => 'Kulturklik (100 eventos)',

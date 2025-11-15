@@ -28,12 +28,6 @@ class EtlImportKulturklik extends Command
     protected $description = 'Importa eventos desde Kulturklik (Euskadi API) con paginación, retry/backoff y registro en etl_runs/etl_errors';
     protected array $provinceMap = []; // province_id => name_es
     protected array $outdoorTypeCodes = [8,13,15,16]; // feria(8), festival(13), otro(15), fiestas(16)
-    // Configurable: tipos excluidos, hora límite y palabras negativas
-    protected array $excludedTypeCodes = [];
-    protected int $latestKidFriendlyMinutes = 21 * 60;
-    protected array $negativeKeywordsEs = [];
-    protected array $negativeKeywordsEu = [];
-    protected array $negativePlaces = [];
     
     public function handle(EventUpserter $upserter): int
     {
@@ -41,21 +35,6 @@ class EtlImportKulturklik extends Command
             ->get()
             ->pluck('name_es', 'province_id')
             ->toArray();
-        
-        // Cargar configuración de filtros familiares
-        $config = config('kulturklik_family', []);
-
-        $this->outdoorTypeCodes = $config['outdoor_type_codes'] ?? $this->outdoorTypeCodes;
-        $this->excludedTypeCodes = $config['excluded_type_codes'] ?? [];
-
-        $this->latestKidFriendlyMinutes = $this->parseHourToMinutes(
-            $config['latest_kid_friendly_hour'] ?? '21:00'
-        );
-
-        $this->negativeKeywordsEs = array_map('mb_strtolower', $config['negative_keywords_es'] ?? []);
-        $this->negativeKeywordsEu = array_map('mb_strtolower', $config['negative_keywords_eu'] ?? []);
-        $this->negativePlaces = array_map('mb_strtolower', $config['negative_places'] ?? []);
-
 
         $source    = (string) $this->argument('source'); // "kulturklik"
         $fromPage  = (int) $this->option('from');
@@ -276,51 +255,6 @@ class EtlImportKulturklik extends Command
 
         foreach ($items as $item) {
             try {
-                // --- Filtro negativo por TIPO ---
-                $typeCode = (int) Arr::get($item, 'type', 0);
-                if (in_array($typeCode, $this->excludedTypeCodes, true)) {
-                    if ($this->output->isVerbose()) {
-                        $this->line(sprintf(
-                            '⏭ [%s] %s (tipo %d excluido)',
-                            $source,
-                            Arr::get($item, 'nameEs') ?? Arr::get($item, 'nameEu'),
-                            $typeCode
-                        ));
-                    }
-                    continue;
-                }
-
-                // --- Filtro negativo por HORARIO (solo openingHoursEs) ---
-                $openingEs = Arr::get($item, 'openingHoursEs');
-                if ($this->isTooLateForKids($openingEs)) {
-                    if ($this->output->isVerbose()) {
-                        $this->line(sprintf(
-                            '⏭ [%s] %s (hora %s > límite)',
-                            $source,
-                            Arr::get($item, 'nameEs') ?? Arr::get($item, 'nameEu'),
-                            $openingEs
-                        ));
-                    }
-                    continue;
-                }
-
-                // --- Filtro negativo por PALABRAS adultas / lugares ---
-                if ($this->hasNegativeSignals($item)) {
-                    if ($this->output->isVerbose()) {
-                        $this->line(sprintf(
-                            '⏭ [%s] %s (descartado por palabras/lugar adulto)',
-                            $source,
-                            Arr::get($item, 'nameEs') ?? Arr::get($item, 'nameEu')
-                        ));
-                    }
-                    continue;
-                }
-
-
-
-
-
-
                 // --- Filtro de ventana 60d ---
                 $startRaw = Arr::get($item, 'startDate');
                 if (!$startRaw) {
@@ -405,8 +339,6 @@ class EtlImportKulturklik extends Command
         //$typeCode = (int) Arr::get($item, 'type', 0); // seguro: 0 si no existe
         $typeCode = (int) Arr::get($item, 'type', 0);
         $isIndoor = in_array($typeCode, $this->outdoorTypeCodes, true) ? 0 : 1;
-        // Extraer rango de edad si aparece en los textos
-        [$ageMin, $ageMax] = $this->extractAgeRangeFromItem($item);
 
         return [
             'source'        => $source,
@@ -432,10 +364,6 @@ class EtlImportKulturklik extends Command
             'is_indoor'     => $isIndoor,
             'last_source_at'=> Arr::get($item, 'publicationDate'),
 
-            //  NUEVO: edades si se han detectado
-            'age_min'       => $ageMin,
-            'age_max'       => $ageMax,
-
             'type_src'      => Arr::get($item, 'typeEs') ?? Arr::get($item, 'typeEu'),
             //'type_code_src' => (string) Arr::get($item, 'type'),
             'type_code_src' => $typeCode,
@@ -443,138 +371,6 @@ class EtlImportKulturklik extends Command
 
         ];
     }
-
-    /**
-     * Convierte "HH:MM" en minutos desde medianoche.
-     */
-    protected function parseHourToMinutes(?string $hhmm): int
-    {
-        if (!$hhmm) {
-            return 0;
-        }
-        if (preg_match('/(\d{1,2}):(\d{2})/', $hhmm, $m)) {
-            $h = (int) $m[1];
-            $min = (int) $m[2];
-            return $h * 60 + $min;
-        }
-        return 0;
-    }
-
-    /**
-     * Devuelve true si la hora de openingHoursEs es posterior al límite “kid friendly”.
-     * Si no hay hora o no se puede parsear, NO aplica el filtro (false).
-     */
-    protected function isTooLateForKids(?string $openingHoursEs): bool
-    {
-        if (!$openingHoursEs) {
-            return false; // sin hora, no filtramos por esto
-        }
-
-        $minutes = $this->parseHourToMinutes($openingHoursEs);
-        if ($minutes === 0) {
-            return false; // formato raro → no filtramos
-        }
-
-        return $minutes > $this->latestKidFriendlyMinutes;
-    }
-
-    /**
-     * Detecta palabras “adultas” o lugares a evitar en nombre/descr/localización.
-     */
-    protected function hasNegativeSignals(array $item): bool
-    {
-        $texts = [
-            Arr::get($item, 'nameEs'),
-            Arr::get($item, 'nameEu'),
-            Arr::get($item, 'descriptionEs'),
-            Arr::get($item, 'descriptionEu'),
-        ];
-
-        foreach ($texts as $t) {
-            if (!is_string($t) || $t === '') {
-                continue;
-            }
-
-            $lower = mb_strtolower($t);
-
-            foreach ($this->negativeKeywordsEs as $kw) {
-                if ($kw !== '' && mb_strpos($lower, $kw) !== false) {
-                    return true;
-                }
-            }
-
-            foreach ($this->negativeKeywordsEu as $kw) {
-                if ($kw !== '' && mb_strpos($lower, $kw) !== false) {
-                    return true;
-                }
-            }
-        }
-
-        // Lugares “adultos”
-        $places = [
-            Arr::get($item, 'establishmentEs'),
-            Arr::get($item, 'establishmentEu'),
-            Arr::get($item, 'municipalityEs'),
-            Arr::get($item, 'municipalityEu'),
-        ];
-
-        foreach ($places as $p) {
-            if (!is_string($p) || $p === '') {
-                continue;
-            }
-            $lower = mb_strtolower($p);
-            foreach ($this->negativePlaces as $kw) {
-                if ($kw !== '' && mb_strpos($lower, $kw) !== false) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Extrae un rango de edad (min, max) a partir de textos del item.
-     * Si no detecta nada, devuelve [null, null].
-     */
-    protected function extractAgeRangeFromItem(array $item): array
-    {
-        $texts = [
-            Arr::get($item, 'nameEs'),
-            Arr::get($item, 'nameEu'),
-            Arr::get($item, 'descriptionEs'),
-            Arr::get($item, 'descriptionEu'),
-        ];
-
-        $ageMin = null;
-        $ageMax = null;
-
-        foreach ($texts as $t) {
-            if (!is_string($t) || $t === '') {
-                continue;
-            }
-
-            // Rango: "3-6 años", "3 a 6 años"
-            if (preg_match('/(\d{1,2})\s*(?:-|a|hasta)\s*(\d{1,2})\s*años/iu', $t, $m)) {
-                $a = (int) $m[1];
-                $b = (int) $m[2];
-                $ageMin = min($a, $b);
-                $ageMax = max($a, $b);
-                return [$ageMin, $ageMax];
-            }
-
-            // "a partir de 11 años", "mayores de 11 años"
-            if (preg_match('/(?:a partir de|mayores de)\s*(\d{1,2})\s*años/iu', $t, $m)) {
-                $ageMin = (int) $m[1];
-                $ageMax = null;
-                return [$ageMin, $ageMax];
-            }
-        }
-
-        return [$ageMin, $ageMax];
-    }
- 
-
 
     protected function logError(?int $runId, string $source, ?string $externalId, ?string $payloadExcerpt, string $message): void
     {
