@@ -99,7 +99,7 @@ class EtlImportExperiences extends Command
                 '--source' => $source,
                 '--min-confidence' => 90
             ]);
-            $this->info('Resolver de tipos ejecutado: '.trim(Artisan::output()));
+            //$this->info('Resolver de tipos ejecutado: '.trim(Artisan::output()));
 
             // Actualiza contadores
             $run->total    = $total;
@@ -107,8 +107,10 @@ class EtlImportExperiences extends Command
             $run->updated  = $updated;
             $run->errors   = $errors;
 
-            $this->line("Resumen → total: {$total} | inserted: {$inserted} | updated: {$updated} | errors: {$errors}");
-            return self::SUCCESS;
+           // $this->line("Resumen → total: {$total} | inserted: {$inserted} | updated: {$updated} | errors: {$errors}");
+           $this->info("Importación completada ✅  total={$total} inserted={$inserted} updated={$updated} errors={$errors}");
+
+           return self::SUCCESS;
 
         } finally {
             $run->finished_at = now();

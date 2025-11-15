@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ExperiencesImportController;
 use Illuminate\Http\Request;                       // <-- añadido
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\ApiDocsController;
+use App\Http\Controllers\Admin\EtlController;
 
 //Route::get('/', function () {
 //    return view('welcome');
@@ -31,7 +32,13 @@ Route::middleware('auth')->group(function () {
     Route::put('/events/{event}', [AdminEventController::class, 'update'])->name('admin.events.update');
     Route::post('/events/{event}/toggle-visible', [AdminEventController::class, 'toggleVisible'])->name('admin.events.toggleVisible');
 
-    //Route::post('/admin/etl/experiencias', [ExperiencesImportController::class, 'run'])->name('admin.etl.experiencias');
+    // Página con la tabla de ETLs
+    Route::get('/etl', [EtlController::class, 'index'])->name('admin.etl.index');
+
+    // POST para ejecutar una ETL
+    Route::post('/etl/run', [EtlController::class, 'run'])->name('admin.etl.run');
+
+    /*
     Route::post('/admin/etl/run', function (Request $request) {
     $request->validate(['etl' => 'required|string']);
 
@@ -61,7 +68,7 @@ Route::middleware('auth')->group(function () {
 
     return response()->json(['output' => $output === '' ? '(sin salida)' : $output]);
     })->name('admin.etl.run');
-
+*/
 
 });
 

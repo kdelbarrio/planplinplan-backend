@@ -135,6 +135,7 @@ class EventController extends Controller
                 'age_max',        // int
                 'is_indoor',      // bool
                 'accessibility_tags',  // json | string
+                'opening_hours',  // string
             ])
             ->paginate($perPage);
 

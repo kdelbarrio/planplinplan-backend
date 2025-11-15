@@ -22,6 +22,7 @@ class Event extends Model
         'moderation',
         'visible',
         'is_indoor',
+        'opening_hours',
     ];
 
     protected $casts = [

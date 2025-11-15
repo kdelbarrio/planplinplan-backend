@@ -171,8 +171,10 @@ class EtlImportKulturklik extends Command
                 }
             }
 
-            $this->line("Resumen → total: {$run->total} | inserted: {$run->inserted} | updated: {$run->updated} | errors: {$run->errors}");
-            
+            //$this->line("Resumen → total: {$run->total} | inserted: {$run->inserted} | updated: {$run->updated} | errors: {$run->errors}");
+            $this->info("Importación completada ✅  total={$run->total} inserted={$run->inserted} updated={$run->updated} errors={$run->errors}");
+
+
             Artisan::call('etl:resolve-event-types', [
             '--source' => 'kulturklik',
             '--min-confidence' => 90,
@@ -308,6 +310,7 @@ class EtlImportKulturklik extends Command
     {
         $title = Arr::get($item, 'nameEs') ?? Arr::get($item, 'nameEu');
 
+        /*
         // Si llega a medianoche y hay openingHoursEs "HH:mm", combínalo
         $start = Arr::get($item, 'startDate');
         $opening = Arr::get($item, 'openingHoursEs');
@@ -315,6 +318,10 @@ class EtlImportKulturklik extends Command
             $date = substr($start, 0, 10); // YYYY-MM-DD
             $start = "{$date}T{$opening}:00Z";
         }
+        */
+
+        $start = Arr::get($item, 'startDate');
+        $opening = Arr::get($item, 'openingHoursEs');
 
         $imageUrl = null;
         $images = Arr::get($item, 'images');
@@ -357,10 +364,10 @@ class EtlImportKulturklik extends Command
             'is_indoor'     => $isIndoor,
             'last_source_at'=> Arr::get($item, 'publicationDate'),
 
-            // 👇 AÑADIDOS DE TIPOLOGÍA (solo-ORIGEN)
             'type_src'      => Arr::get($item, 'typeEs') ?? Arr::get($item, 'typeEu'),
             //'type_code_src' => (string) Arr::get($item, 'type'),
             'type_code_src' => $typeCode,
+            'opening_hours' => $opening,
 
         ];
     }

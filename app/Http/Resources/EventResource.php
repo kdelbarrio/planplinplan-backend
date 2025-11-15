@@ -50,6 +50,7 @@ class EventResource extends JsonResource
             'age_max'       => $this->age_max,
             'is_indoor'     => (bool) $this->is_indoor,
             'accessibility_tag' => $this->accessibility_tag, // array/string según cast
+            'opening_hours' => $this->opening_hours,
         ];
     }
 }
