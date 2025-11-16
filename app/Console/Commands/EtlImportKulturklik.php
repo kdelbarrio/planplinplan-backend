@@ -23,7 +23,8 @@ class EtlImportKulturklik extends Command
         {--timeout=20 : Timeout HTTP en segundos}
         {--retries=3 : Reintentos por petición}
         {--sleep=500 : Backoff base en ms (exponencial)}
-        {--mode=60d : Modo: 60d (byMonth hoy→+59), upcoming (endpoint clásico)}';
+        {--mode=60d : Modo: 60d (byMonth hoy→+59), upcoming (endpoint clásico), days (byDate hoy→+N)}
+        {--days=7 : Número de días a importar desde hoy en modo days}';
 
     protected $description = 'Importa eventos desde Kulturklik (Euskadi API) con paginación, retry/backoff y registro en etl_runs/etl_errors';
     protected array $provinceMap = []; // province_id => name_es
@@ -67,9 +68,24 @@ class EtlImportKulturklik extends Command
         $sleepMs   = (int) $this->option('sleep');
         $mode      = (string) $this->option('mode');
 
-        // Ventana de importación (UTC) — hoy → hoy+59
-        $winStart = Carbon::today('UTC');
-        $winEnd   = Carbon::today('UTC')->addDays(59);
+        // Ventana de importación (UTC)
+        //$winStart = Carbon::today('UTC');
+        //$winEnd   = Carbon::today('UTC')->addDays(59);
+       
+        $daysOpt = (int) $this->option('days');
+
+        // Ventana de importación (UTC)
+        if ($mode === 'days') {
+            // Ej: hoy → hoy + (days-1)
+            $days = $daysOpt > 0 ? $daysOpt : 7;
+            $winStart = Carbon::today('UTC')->startOfDay();
+            $winEnd   = $winStart->copy()->addDays($days - 1)->endOfDay();
+        } else {
+            // Comportamiento actual: 60 días (2 meses aprox.)
+            $winStart = Carbon::today('UTC');
+            $winEnd   = Carbon::today('UTC')->addDays(59);
+        }
+
 
         $run = EtlRun::create([
             'source'      => $source,
@@ -127,7 +143,113 @@ class EtlImportKulturklik extends Command
                     $run->updated  += $counts['updated'];
                     $run->errors   += $counts['errors'];
                 }
+                
+            /*
+            } elseif ($mode === 'days') {
+             */
+            } else {
+                // ====== MODO: DÍAS USANDO byDate ======
+                $days = (int) $this->option('days') ?: 7;
+                if ($days < 1) {
+                    $days = 1;
+                }
 
+                $this->info(sprintf(
+                    "Importando %s [byDate %d días] ventana %s → %s (UTC) (_elements=%d)",
+                    $source,
+                    $days,
+                    $winStart->toDateString(),
+                    $winEnd->toDateString(),
+                    $elements
+                ));
+
+                // Recorremos día a día dentro de la ventana
+                $cursor = $winStart->copy();
+                while ($cursor->lte($winEnd)) {
+                    $y = $cursor->year;
+                    $m = $cursor->month;
+                    $d = $cursor->day;
+
+                    // Endpoint byDate:
+                    // https://api.euskadi.eus/culture/events/v1.0/events/byDate/{Y}/{m}/{d}
+                    $baseUrl = sprintf(
+                        'https://api.euskadi.eus/culture/events/v1.0/events/byDate/%04d/%02d/%02d',
+                        $y,
+                        $m,
+                        $d
+                    );
+
+                    $page  = max(1, $fromPage);
+                    $first = $this->fetchPage($baseUrl, $page, $elements, $timeout, $retries, $sleepMs);
+
+                    if (!$first['ok']) {
+                        $this->logError($run->id, $source, null, $first['body'], $first['error']);
+                        $this->warn(sprintf(
+                            'Día %s — fallo en página %d: %s',
+                            $cursor->toDateString(),
+                            $page,
+                            $first['error']
+                        ));
+                        $cursor->addDay();
+                        continue;
+                    }
+
+                    $payload    = $first['json'];
+                    $totalPages = (int) Arr::get($payload, 'totalPages', 0);
+                    $toPage     = $toPageOpt ? (int) $toPageOpt : ($totalPages > 0 ? $totalPages : PHP_INT_MAX);
+
+                    if ($maxPages) {
+                        $toPage = min($toPage, $page + $maxPages - 1);
+                    }
+
+                    $this->info(sprintf(
+                        'Día %s: páginas %d → %s',
+                        $cursor->toDateString(),
+                        $page,
+                        $toPage === PHP_INT_MAX ? '¿?' : $toPage
+                    ));
+
+                    // Pág. 1
+                    $counts = $this->processItems($payload, $source, $upserter, $winStart, $winEnd);
+                    $run->total    += $counts['total'];
+                    $run->inserted += $counts['inserted'];
+                    $run->updated  += $counts['updated'];
+                    $run->errors   += $counts['errors'];
+
+                    // Pág. 2..N
+                    $stopByShortPage = ($totalPages === 0);
+                    for ($p = $page + 1; $p <= $toPage; $p++) {
+                        $resp = $this->fetchPage($baseUrl, $p, $elements, $timeout, $retries, $sleepMs);
+                        if (!$resp['ok']) {
+                            $this->logError($run->id, $source, null, $resp['body'], $resp['error']);
+                            $this->warn(sprintf(
+                                'Día %s — página %d: %s',
+                                $cursor->toDateString(),
+                                $p,
+                                $resp['error']
+                            ));
+                            continue;
+                        }
+
+                        $counts = $this->processItems($resp['json'], $source, $upserter, $winStart, $winEnd);
+                        $run->total    += $counts['total'];
+                        $run->inserted += $counts['inserted'];
+                        $run->updated  += $counts['updated'];
+                        $run->errors   += $counts['errors'];
+
+                        if ($stopByShortPage) {
+                            $itemsCount = count(Arr::get($resp['json'], 'items', []));
+                            if ($itemsCount < $elements) {
+                                break;
+                            }
+                        }
+                    }
+
+                    $cursor->addDay();
+                }
+            
+            }
+  /*          
             } else {
                 // ====== MODO: 60 DÍAS USANDO byMonth ======
                 $this->info(sprintf(
@@ -191,7 +313,7 @@ class EtlImportKulturklik extends Command
                     }
                 }
             }
-
+*/
             //$this->line("Resumen → total: {$run->total} | inserted: {$run->inserted} | updated: {$run->updated} | errors: {$run->errors}");
             $this->info("Importación completada ✅  total={$run->total} inserted={$run->inserted} updated={$run->updated} errors={$run->errors}");
 
@@ -213,6 +335,7 @@ class EtlImportKulturklik extends Command
     /**
      * Calcula los meses [YYYY, MM] que cubren [start, end] (inclusive), en UTC.
      */
+    /*
     protected function monthsCovering(Carbon $start, Carbon $end): array
     {
         $out = [];
@@ -223,7 +346,7 @@ class EtlImportKulturklik extends Command
         }
         return $out;
     }
-
+    */
     /**
      * GET página: usa _elements y _page, con retry/backoff exponencial.
      * Soporta tanto /upcoming como /byMonth/YYYY/MM (mismo estilo de query string).
@@ -375,16 +498,6 @@ class EtlImportKulturklik extends Command
     protected function mapKulturklikItemToDto(array $item, string $source): array
     {
         $title = Arr::get($item, 'nameEs') ?? Arr::get($item, 'nameEu');
-
-        /*
-        // Si llega a medianoche y hay openingHoursEs "HH:mm", combínalo
-        $start = Arr::get($item, 'startDate');
-        $opening = Arr::get($item, 'openingHoursEs');
-        if ($start && str_ends_with($start, 'T00:00:00Z') && $opening && preg_match('/^\d{2}:\d{2}$/', $opening)) {
-            $date = substr($start, 0, 10); // YYYY-MM-DD
-            $start = "{$date}T{$opening}:00Z";
-        }
-        */
 
         $start = Arr::get($item, 'startDate');
         $opening = Arr::get($item, 'openingHoursEs');

@@ -15,6 +15,9 @@
                     <x-nav-link :href="route('admin.events.index')" :active="request()->routeIs('admin.events.index')">
                         {{ __('Eventos') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('admin.etl.index')" :active="request()->routeIs('admin.etl.index')">
+                        {{ __('Importación ETLs') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('api.docs')" :active="request()->routeIs('api.docs')">
                         {{ __('Documentación API') }}
                     </x-nav-link>
@@ -72,6 +75,12 @@
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('admin.events.index')" :active="request()->routeIs('admin.events.index')">
                 {{ __('Eventos') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.etl.index')" :active="request()->routeIs('admin.etl.index')">
+                        {{ __('Importación ETLs') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('api.docs')" :active="request()->routeIs('api.docs')">
+                        {{ __('Documentación API') }}
             </x-responsive-nav-link>
         </div>
 

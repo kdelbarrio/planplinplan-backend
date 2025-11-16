@@ -5,16 +5,16 @@
     </h1>
   </x-slot>
 
-  <div class="py-6">
-    <div class="mx-auto max-w-6xl sm:px-6 lg:px-8">
+  <div class="py-12">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
       <div class="bg-white shadow-sm sm:rounded-lg">
         <div class="p-6">
-          <p class="text-sm text-gray-600 mb-4">
+          <p class="text-gray-600 mb-4">
             Selecciona y ejecuta una ETL. La salida del comando se mostrará en la última columna.
           </p>
 
           <table class="w-full border-collapse">
-            <thead class="text-left text-sm text-gray-600 border-b">
+            <thead class="text-left text-gray-600 border-b">
               <tr class="[&>th]:px-4 [&>th]:py-2">
                 <th class="w-1/5">ETL</th>
                 <th class="w-1/6">Fuente</th>
@@ -23,13 +23,13 @@
                 <th class="w-1/4">Salida</th>
               </tr>
             </thead>
-            <tbody class="text-sm divide-y">
+            <tbody class="divide-y">
               @foreach ($etls as $key => $etl)
                 <tr class="[&>td]:px-4 [&>td]:py-2 align-top">
                   <td class="font-medium text-gray-900">
                     {{ $etl['name'] }}
-                    <div class="text-xs text-gray-500">clave: {{ $key }}</div>
-                    <div class="text-xs text-gray-500">comando: <code>{{ $etl['command'] }}</code></div>
+                    <div class="text-sm text-gray-500">clave: {{ $key }}</div>
+                    <div class="text-sm text-gray-500">comando: <code>{{ $etl['command'] }}</code></div>
                   </td>
 
                   <td class="text-gray-700">{{ $etl['source'] }}</td>

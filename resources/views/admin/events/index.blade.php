@@ -6,10 +6,12 @@
     </x-slot>
 <div class="py-12">
   <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-
+<!--
     <div class="p-2 sm:p-2 bg-white shadow sm:rounded-lg">
+      
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <h2 class="px-4 pt-4 font-bold">Módulo importación ETL</h2>
+       
+      <h2 class="px-4 pt-4 font-bold">Módulo importación ETL</h2>
         <div class="p-4">
 
           {{-- ETL runner: combo + botón --}}
@@ -26,7 +28,8 @@
           <div id="etl-output"></div>
         </div>
       </div>
-    </div>
+    </div> 
+-->
 
 <div class="p-8 sm:p-2 bg-white shadow sm:rounded-lg">
   <h2 class="px-4 pt-4 font-bold">Filtrar eventos</h2> 
@@ -92,16 +95,16 @@
       </div>
     </div>
 
-    <table class="border-collapse " >
+    <table class="border-collapse sm:table-fixed" >
       <thead>
         <tr class="bg-gray-200">
           <th class="px-4 py-2"></th>
           <th class="px-4 py-2">ID</th>
           <th class="px-4 py-2">Título</th>
-          <th class="px-4 py-2">Fecha</th>
+          <th class="px-4 py-2">Fecha/Hora</th>
           <th class="px-4 py-2">Municipio</th>
           <th class="px-4 py-2">Territorio</th>
-          <th class="px-4 py-2">Mod.</th>
+          <th class="px-4 py-2">Moder.</th>
           <th class="px-4 py-2">Visible</th>
           <th class="px-4 py-2"></th>
         </tr>
@@ -115,9 +118,9 @@
           <td class="px-2 py-2">{{ $e->id }}</td>
           <td class="px-2 py-2">
             <div><strong>{{ $e->title_cur ?: $e->title_src }}</strong></div>
-            <div><small style="color-gray">{{ $e->source }} #{{ $e->source_id }}</small></div>
+            <div><small><span class="border border-gray rounded-xl border-solid px-1 py-1 bg-gray-100 font-semibold mr-1">{{ $e-> type_src }}</span>  {{ $e->source }} #{{ $e->source_id }}</small></div>
           </td>
-          <td class="px-2 py-2">{{ $e->starts_at?->timezone('Europe/Madrid')->format('d-m-Y H:i') ?? '' }}</td>
+          <td class="px-2 py-2">{{ $e->starts_at?->timezone('Europe/Madrid')->format('d-m-Y') ?? '' }} <span class="italic block text-sm">{{ $e->opening_hours }}</span></td>
           <td class="px-2 py-2">{{ $e->municipality_cur ?: $e->municipality_src }}</td>
           <td class="px-2 py-2">{{ $e->territory_cur ?: $e->territory_src }}</td>
           <td class="px-2 py-2"><span class="pill">{{ $e->moderation }}</span></td>
@@ -141,7 +144,7 @@
     </div>
   </form>
 </div>
-  <script>
+<script>
     const selectAll = document.getElementById('select-all');
     const checks = Array.from(document.querySelectorAll('.row-check'));
     if (selectAll) {
@@ -149,7 +152,9 @@
         checks.forEach(ch => ch.checked = e.target.checked);
       });
     }
-        // Envía la petición por AJAX y pinta la respuesta en la misma página
+    
+    // Envía la petición por AJAX y pinta la respuesta en la misma página
+    /*
     document.getElementById('etl-form').addEventListener('submit', async function (e) {
       e.preventDefault();
       const select = document.getElementById('etl-select');
@@ -179,6 +184,7 @@
         output.textContent = String(err);
       }
     });
+    */
   </script>
 </div>
 </x-app-layout>
