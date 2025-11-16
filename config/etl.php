@@ -4,12 +4,24 @@ return [
 
     'jobs' => [
 
-         // Variante “kulturklik proximos 7 dias”
+         // Variante “kulturklik proximo 1 dia”
+        'kulturklik-7d' => [
+            'name'        => 'Kulturklik (próximo día)',
+            'source'      => 'Kulturklik',
+            'description' => 'Modo por dias: próximo 1 día',
+            'command'     => 'etl:import',
+            'params'      => [
+                'source'  => 'kulturklik',
+                '--mode'  => 'days',
+                '--days'  => 1,
+            ],
+        ],
+                 // Variante “kulturklik proximos 7 dias”
         'kulturklik-7d' => [
             'name'        => 'Kulturklik (próximos 7 días)',
             'source'      => 'Kulturklik',
             'description' => 'Modo por dias: próximos 7 días',
-            'command'     => 'etl:import --mode:days --days=7',
+            'command'     => 'etl:import',
             'params'      => [
                 'source'  => 'kulturklik',
                 '--mode'  => 'days',
@@ -22,7 +34,7 @@ return [
             'name'        => 'Kulturklik (próximos 14 días)',
             'source'      => 'Kulturklik',
             'description' => 'Modo por dias: próximos 14 días',
-            'command'     => 'etl:import --mode:days --days=14',
+            'command'     => 'etl:import',
             'params'      => [
                 'source'  => 'kulturklik',
                 '--mode'  => 'days',
@@ -36,7 +48,7 @@ return [
             'name'        => 'Kulturklik (2 páginas próximos eventos)',
             'source'      => 'Euskadi - Kulturklik',
             'description' => 'Modo upcoming, 2 páginas (100 eventos aprox.)',
-            'command'     => 'etl:import --mode:upcoming --max=2',
+            'command'     => 'etl:import',
             'params'      => [
                 'source'  => 'kulturklik',
                 '--mode'  => 'upcoming',

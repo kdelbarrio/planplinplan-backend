@@ -23,8 +23,8 @@ class EtlImportKulturklik extends Command
         {--timeout=20 : Timeout HTTP en segundos}
         {--retries=3 : Reintentos por petición}
         {--sleep=500 : Backoff base en ms (exponencial)}
-        {--mode=60d : Modo: 60d (byMonth hoy→+59), upcoming (endpoint clásico), days (byDate hoy→+N)}
-        {--days=7 : Número de días a importar desde hoy en modo days}';
+        {--mode=days : Modo: upcoming (endpoint upcoming), days (endpoint byDate hoy→+N)}
+        {--days=1 : Número de días a importar desde hoy en modo days}';
 
     protected $description = 'Importa eventos desde Kulturklik (Euskadi API) con paginación, retry/backoff y registro en etl_runs/etl_errors';
     protected array $provinceMap = []; // province_id => name_es
@@ -144,10 +144,12 @@ class EtlImportKulturklik extends Command
                     $run->errors   += $counts['errors'];
                 }
                 
-            /*
-            } elseif ($mode === 'days') {
-             */
-            } else {
+            
+            } elseif ($mode === 'days') 
+            
+            {
+             
+           /* } else {*/
                 // ====== MODO: DÍAS USANDO byDate ======
                 $days = (int) $this->option('days') ?: 7;
                 if ($days < 1) {
@@ -248,8 +250,7 @@ class EtlImportKulturklik extends Command
                     $cursor->addDay();
                 }
             
-            }
-  /*          
+            
             } else {
                 // ====== MODO: 60 DÍAS USANDO byMonth ======
                 $this->info(sprintf(
@@ -313,7 +314,7 @@ class EtlImportKulturklik extends Command
                     }
                 }
             }
-*/
+
             //$this->line("Resumen → total: {$run->total} | inserted: {$run->inserted} | updated: {$run->updated} | errors: {$run->errors}");
             $this->info("Importación completada ✅  total={$run->total} inserted={$run->inserted} updated={$run->updated} errors={$run->errors}");
 
@@ -335,7 +336,7 @@ class EtlImportKulturklik extends Command
     /**
      * Calcula los meses [YYYY, MM] que cubren [start, end] (inclusive), en UTC.
      */
-    /*
+    
     protected function monthsCovering(Carbon $start, Carbon $end): array
     {
         $out = [];
@@ -346,7 +347,7 @@ class EtlImportKulturklik extends Command
         }
         return $out;
     }
-    */
+    
     /**
      * GET página: usa _elements y _page, con retry/backoff exponencial.
      * Soporta tanto /upcoming como /byMonth/YYYY/MM (mismo estilo de query string).

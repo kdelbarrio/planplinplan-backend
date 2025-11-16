@@ -18,7 +18,7 @@
               <tr class="[&>th]:px-4 [&>th]:py-2">
                 <th class="w-1/5">ETL</th>
                 <th class="w-1/6">Fuente</th>
-                <th class="w-2/5">Descripción</th>
+                <th class="w-1/5">Descripción</th>
                 <th class="w-1/6">Acción</th>
                 <th class="w-1/4">Salida</th>
               </tr>
