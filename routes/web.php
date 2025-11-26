@@ -8,21 +8,29 @@ use Illuminate\Http\Request;                       // <-- añadido
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\ApiDocsController;
 use App\Http\Controllers\Admin\EtlController;
+use App\Http\Controllers\Admin\DashboardController;
 
 //Route::get('/', function () {
-//    return view('welcome');
+ //   return view('dashboard');
 //});
 
-Route::get('/', [AdminEventController::class, 'index'])
-->middleware('auth')->name('admin.events.index');
+//Route::get('/', [AdminEventController::class, 'index'])
+//->middleware('auth')->name('admin.events.index');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/', function (Request $request) {
+    return $request->user()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/admin/users/{user}/promote', [DashboardController::class, 'promote'])->name('admin.users.promote');
+});
 
 Route::get('/api/docs', [ApiDocsController::class, 'show'])->name('api.docs');
 
-Route::middleware('auth')->group(function () {
+Route::middleware('auth','can:access-admin')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -38,38 +46,11 @@ Route::middleware('auth')->group(function () {
     // POST para ejecutar una ETL
     Route::post('/etl/run', [EtlController::class, 'run'])->name('admin.etl.run');
 
-    /*
-    Route::post('/admin/etl/run', function (Request $request) {
-    $request->validate(['etl' => 'required|string']);
+    
+});
 
-    $map = [
-        //'kulturklik'   => ['command' => 'etl:import', 'params' => ['--source' => 'kulturklik']],
-        'kulturklik-100'   => ['command' => 'etl:import', 'params' => ['--mode' => 'upcoming','--max' => '2']],
-        'kulturklik-200'   => ['command' => 'etl:import', 'params' => ['--mode' => 'upcoming','--max' => '4']],
-        'experiencias' => ['command' => 'etl:import-experiences', 'params' => []],
-    ];
-
-    $key = $request->input('etl');
-    if (! isset($map[$key])) {
-        return response()->json(['error' => 'Unknown ETL selected'], 400);
-    }
-
-    $entry = $map[$key];
-
-    // Usar BufferedOutput para capturar correctamente la salida del comando
-    $buffer = new \Symfony\Component\Console\Output\BufferedOutput();
-
-    try {
-        \Artisan::call($entry['command'], $entry['params'], $buffer);
-        $output = trim($buffer->fetch());
-    } catch (\Throwable $e) {
-        return response()->json(['output' => '(error)', 'error' => $e->getMessage()], 500);
-    }
-
-    return response()->json(['output' => $output === '' ? '(sin salida)' : $output]);
-    })->name('admin.etl.run');
-*/
-
+Route::fallback(function () {
+    return redirect()->route('login');
 });
 
 require __DIR__.'/auth.php';

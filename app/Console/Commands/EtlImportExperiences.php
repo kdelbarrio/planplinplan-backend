@@ -188,11 +188,13 @@ class EtlImportExperiences extends Command
         $territory    = $this->firstValueSmart((string) $territoryRaw);
 
         // Fechas por defecto (objetos Carbon en UTC)
-        $defaultStartsAt = Carbon::create(2025, 1, 1, 0, 0, 0, 'UTC');
-        $defaultEndsAt   = Carbon::create(2035, 12, 31, 23, 59, 59, 'UTC');
+        //$defaultStartsAt = Carbon::create(2025, 1, 1, 0, 0, 0, 'UTC');
+        //$defaultEndsAt   = Carbon::create(2035, 12, 31, 23, 59, 59, 'UTC');
+        $defaultStartsAt = '';
+        $defaultEndsAt   = '';
 
-        // Imagen: el dataset no trae un campo de imagen directa; lo dejamos null
-        $imageUrl = null;
+        // Imagen: el dataset no trae un campo de imagen directa; le asignams una por defecto
+        $imageUrl = '/assets/images/default-experiences.png';
 
         
         return [

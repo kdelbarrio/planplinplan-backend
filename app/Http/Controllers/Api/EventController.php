@@ -49,7 +49,11 @@ class EventController extends Controller
             ->where('is_canceled', false)
             ->when(!$includePast, function ($q) {
                 $startLocal = \Illuminate\Support\Carbon::now('Europe/Madrid')->startOfDay()->utc();
-                $q->where('ends_at', '>=', $startLocal);
+                // incluir eventos con ends_at >= hoy OR ends_at IS NULL
+                $q->where(function ($qq) use ($startLocal) {
+                    $qq->where('ends_at', '>=', $startLocal)
+                       ->orWhereNull('ends_at');
+                });
             })
             // filtros territoriales
             ->when($territory, function ($q) use ($territory) {

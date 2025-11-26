@@ -277,8 +277,10 @@ class EtlImportRoutes extends Command
         $territory    = $this->firstValueSmart((string) $territoryRaw);
 
         // Fechas por defecto (como en experiencias)
-        $defaultStartsAt = Carbon::create(2025, 1, 1, 0, 0, 0, 'UTC');
-        $defaultEndsAt   = Carbon::create(2035, 12, 31, 23, 59, 59, 'UTC');
+        //$defaultStartsAt = Carbon::create(2025, 1, 1, 0, 0, 0, 'UTC');
+        //$defaultEndsAt   = Carbon::create(2035, 12, 31, 23, 59, 59, 'UTC');
+        $defaultStartsAt = '';
+        $defaultEndsAt   = '';
 
         // Punto de inicio / lugar
         $venueName = Arr::get($item, 'routeInitPoint')
@@ -286,7 +288,7 @@ class EtlImportRoutes extends Command
             ?: Arr::get($item, 'address');
 
         // Imagen por defecto
-        $imageUrl = config('etl.routes_default_image', '/images/default-route.jpg');
+        $imageUrl = config('etl.routes_default_image', '/assets/images/default-route.png');
 
         return [
             'source'        => $source,
