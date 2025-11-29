@@ -70,9 +70,9 @@ class EventUpserter
                 ] + $srcData);
 
                 // Regla automática (opcional) si sigue pending
-                if ($this->autoVisible($event)) {
-                    $event->visible = true;
-                }
+                //if ($this->autoVisible($event)) {
+                //    $event->visible = true;
+                //}
 
                 $event->save();
                 $event->refresh();
@@ -89,9 +89,9 @@ class EventUpserter
                 if ($changed) {
                     $event->import_status = 'updated';
 
-                    if ($event->moderation === 'pendiente' && $this->autoVisible($event)) {
-                        $event->visible = true;
-                    }
+                   // if ($event->moderation === 'pendiente' && $this->autoVisible($event)) {
+                   //     $event->visible = true;
+                   // }
 
                     $event->save();
                 } else {
