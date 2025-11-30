@@ -102,7 +102,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <x-input-label>Etiquetas de accesibilidad (coma o nueva línea)</x-input-label>
-            <x-text-input name="accessibility_tags"  placeholder="ramp, subtitles, sign-language" value="{{ old('accessibility_tags', is_array($event->accessibility_tags) ? implode(', ', $event->accessibility_tags) : '') }}" />
+            <x-text-input name="accessibility_tags"  placeholder="rampa, ascensor, lengua de signos" value="{{ old('accessibility_tags', is_array($event->accessibility_tags) ? implode(', ', $event->accessibility_tags) : '') }}" />
           </div>
           <div>
             <x-input-label>Indoor</x-input-label>

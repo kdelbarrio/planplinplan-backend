@@ -100,6 +100,7 @@
         <tr class="bg-gray-200">
           <th class="px-4 py-2"></th>
           <th class="px-4 py-2">ID</th>
+          <th class="px-4 py-2">Imagen</th>
           <th class="px-4 py-2">Título</th>
           <th class="px-4 py-2">Fecha/Hora</th>
           <th class="px-4 py-2">Municipio</th>
@@ -116,6 +117,7 @@
             <input type="checkbox" name="ids[]" value="{{ $e->id }}" class="row-check">
           </td>
           <td class="px-2 py-2">{{ $e->id }}</td>
+          <td class="px-2 py-2"><img src="{{ $e->image_url}}" alt=""  ></td>
           <td class="px-2 py-2">
             <div><strong>{{ $e->title_cur ?: $e->title_src }}</strong></div>
             <div><small><span class="border border-gray rounded-xl border-solid px-1 py-1 bg-gray-100 font-semibold mr-1">{{ $e-> type_src }}</span>  {{ $e->source }} #{{ $e->source_id }}</small></div>

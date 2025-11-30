@@ -27,7 +27,7 @@ class DashboardController extends Controller
         // últimas 10 importaciones (etl_runs)
         //$etlRuns = DB::table('etl_runs')
         $etlRuns = $me->is_admin ? DB::table('etl_runs')
-            ->select('finished_at', 'source', 'inserted')
+            ->select('finished_at', 'source', 'inserted', 'updated', 'errors')
             ->orderBy('finished_at', 'desc')
             ->limit(10)
             ->get(): collect();

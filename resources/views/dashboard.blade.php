@@ -5,8 +5,8 @@
         </h2>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             @if(session('success'))
                 <div class="mb-4 p-4 bg-green-100 border border-green-200 text-green-900 rounded">
                     {{ session('success') }}
@@ -18,7 +18,7 @@
                 <div class="mb-6">
                     <h1 class="text-2xl font-semibold">Hola, {{ $me->name }}</h1>
                     <p class="text-sm text-gray-600">
-                        Última conexión:
+                        Actualizado por última vez:
                         @if($lastLogin)
                             {{ $lastLogin->translatedFormat('j \d\e F \a \l\a\s H:i') }} {{-- p. ej. "6 de noviembre a las 14:30" --}}
                         @else
@@ -40,24 +40,24 @@
                             <table class="min-w-full text-sm divide-y divide-gray-200">
                                 <thead>
                                     <tr class="text-left text-xs text-gray-500">
-                                        <th class="px-2 py-2">Nombre</th>
-                                        <th class="px-2 py-2">Email</th>
-                                        <th class="px-2 py-2">Registrado</th>
-                                        <th class="px-2 py-2">Acción</th>
+                                        <th class="px-2 py-4">Nombre</th>
+                                        <th class="px-2 py-4">Email</th>
+                                        <th class="px-2 py-4">Registrado</th>
+                                        <th class="px-2 py-4">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
                                     @foreach($usersToReview as $u)
                                     <tr>
-                                        <td class="px-2 py-3">{{ $u->name }}</td>
-                                        <td class="px-2 py-3">{{ $u->email }}</td>
-                                        <td class="px-2 py-3">{{ optional($u->created_at)->translatedFormat('j \d\e F Y') }}</td>
-                                        <td class="px-2 py-3">
+                                        <td class="px-2 py-4">{{ $u->name }}</td>
+                                        <td class="px-2 py-4">{{ $u->email }}</td>
+                                        <td class="px-2 py-4">{{ optional($u->created_at)->translatedFormat('j \d\e F Y') }}</td>
+                                        <td class="px-2 py-4">
                                             <form method="POST" action="{{ route('admin.users.promote', $u->id) }}" onsubmit="return confirm('Confirmar promoción de {{ addslashes($u->name) }} a administrador?')">
                                                 @csrf
-                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700">
+                                                <x-primary-button type="submit" >
                                                     Dar acceso
-                                                </button>
+                                                </x-primary-button>
                                             </form>
                                         </td>
                                     </tr>
@@ -76,17 +76,21 @@
                             <table class="min-w-full text-sm divide-y divide-gray-200">
                                 <thead>
                                     <tr class="text-left text-xs text-gray-500">
-                                        <th class="px-2 py-2">Fecha</th>
-                                        <th class="px-2 py-2">Origen</th>
-                                        <th class="px-2 py-2">Insertadas</th>
+                                        <th class="px-2 py-4">Fecha</th>
+                                        <th class="px-2 py-4">Origen</th>
+                                        <th class="px-2 py-4">Insertadas</th>
+                                        <th class="px-2 py-4">Actualizadas</th>
+                                        <th class="px-2 py-4">Errores</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
                                     @foreach($etlRuns as $run)
                                     <tr>
-                                        <td class="px-2 py-3">{{ \Carbon\Carbon::parse($run->finished_at)->translatedFormat('j \d\e F Y H:i') }}</td>
-                                        <td class="px-2 py-3">{{ $run->source }}</td>
-                                        <td class="px-2 py-3">{{ $run->inserted }}</td>
+                                        <td class="px-2 py-4">{{ \Carbon\Carbon::parse($run->finished_at)->translatedFormat('j \d\e F Y H:i') }}</td>
+                                        <td class="px-2 py-4">{{ $run->source }}</td>
+                                        <td class="px-2 py-4">{{ $run->inserted }}</td>
+                                        <td class="px-2 py-4">{{ $run->updated }}</td>
+                                        <td class="px-2 py-4">{{ $run->errors }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
