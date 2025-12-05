@@ -29,6 +29,7 @@ class EventController extends Controller
         $to           = $request->query('to');   // YYYY-MM-DD (local)
         $includePast  = filter_var($request->query('include_past', false), FILTER_VALIDATE_BOOL);
 
+        
         // nuevos filtros
         $typeSrc           = $request->query('type_src'); // texto
         $typeSlug          = $request->query('type_slug') ?? $request->query('typeSlug'); // slug de EventType
@@ -37,6 +38,9 @@ class EventController extends Controller
         $accessibilityTags = trim((string) $request->query('accessibility_tags', '')); // texto, puede ser CSV
         $isIndoorRaw       = $request->query('is_indoor', null); // bool (true/false) o null
         $isIndoor          = is_null($isIndoorRaw) ? null : filter_var($isIndoorRaw, FILTER_VALIDATE_BOOL);
+
+        // date_first: por defecto true => mostrar primero eventos con fecha
+        $dateFirst = filter_var($request->query('date_first', true), FILTER_VALIDATE_BOOL);      
 
 
         // Permitir hasta 400 por página (con mínimo 1)
@@ -120,9 +124,23 @@ class EventController extends Controller
                        ->orWhere('territory_cur', 'like', "%{$q}%")
                        ->orWhere('territory_src', 'like', "%{$q}%");
                 });
-            })
-            ->orderBy('starts_at')
-            ->select([
+            });
+            //->orderBy('starts_at')
+
+            // Ordenamiento: primero eventos con fecha (starts_at NOT NULL) y por starts_at asc,
+            // luego por id desc como fallback; si no queremos orden por fecha usamos id desc.
+            if ($dateFirst) {
+                // 'starts_at IS NULL ASC' -> NOT NULL (0) antes que NULL (1)
+                $events = $events->orderByRaw('starts_at IS NULL ASC')
+                                ->orderBy('starts_at', 'ASC')
+                                ->orderByDesc('id');
+            } else {
+                $events = $events->orderByDesc('id');
+            }    
+            
+            // select/fields and paginate
+            $events = $events->select([
+            //->select([
                 'id',
                 'title_cur','title_src',
                 'description_cur','description_src',
