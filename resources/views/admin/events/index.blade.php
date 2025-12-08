@@ -31,7 +31,7 @@
     </div> 
 -->
 
-<div class="p-8 sm:p-2 bg-white shadow sm:rounded-lg">
+<div class="p-2 bg-white shadow sm:rounded-lg">
   <h2 class="px-4 pt-4 font-bold">Filtrar eventos</h2> 
   <form method="get" class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 lg:grid-cols-5 xl:grid-cols-5 items-end">
       {{-- Estado (select) --}}
@@ -83,30 +83,80 @@
     <input type="hidden" name="status" value="{{ request('status') }}">
     <input type="hidden" name="q" value="{{ request('q') }}">
     <input type="hidden" name="per_page" value="{{ request('per_page') }}">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
       <div> 
         <label><input type="checkbox" id="select-all" class="px-2"> Seleccionar todos</label>
       </div>
-      <div>
+      <div class="col-span-2 text-right">
         <x-secondary-button class="btn" name="action" value="approve" type="submit">Aprobar</x-secondary-button>
         <x-secondary-button class="btn" name="action" value="publish" type="submit">Publicar</x-secondary-button>
         <x-secondary-button class="btn" name="action" value="approve_publish" type="submit">Aprobar + Publicar</x-secondary-button>
         <x-secondary-button class="btn" name="action" value="hide" type="submit">Ocultar</x-secondary-button>
+        <x-danger-button class="btn ml-4" name="action" value="delete" type="submit" onclick="return confirm('¿Estás seguro de que deseas eliminar los eventos seleccionados?')">Eliminar</x-danger-button>
       </div>
     </div>
-
+    <div class="overflow-x-auto">
     <table class="border-collapse sm:table-fixed" >
       <thead>
         <tr class="bg-gray-200">
           <th class="px-4 py-2"></th>
-          <th class="px-4 py-2">ID</th>
+          <th class="px-4 py-2">
+                <a href="#" class="sort-header" data-field="id">
+                ID
+                @if($sortBy === 'id')
+                  <span class="ml-1">{{ $sortDir === 'asc' ? '↑' : '↓' }}</span>
+                @endif
+              </a>
+          </th>
           <th class="px-4 py-2">Imagen</th>
-          <th class="px-4 py-2">Título</th>
-          <th class="px-4 py-2">Fecha/Hora</th>
-          <th class="px-4 py-2">Municipio</th>
-          <th class="px-4 py-2">Territorio</th>
-          <th class="px-4 py-2">Moder.</th>
-          <th class="px-4 py-2">Visible</th>
+          <th class="px-4 py-2">
+            <a href="#" class="sort-header" data-field="title_cur">
+              Título
+              @if($sortBy === 'title_cur')
+                <span class="ml-1">{{ $sortDir === 'asc' ? '↑' : '↓' }}</span>
+              @endif
+            </a>
+          </th>
+          <th class="px-4 py-2">
+            <a href="#" class="sort-header" data-field="starts_at">
+              Fecha/Hora
+              @if($sortBy === 'starts_at')
+                <span class="ml-1">{{ $sortDir === 'asc' ? '↑' : '↓' }}</span>
+              @endif
+            </a>
+          </th>
+          <th class="px-4 py-2">
+            <a href="#" class="sort-header" data-field="municipality_cur">
+                Municipio
+                @if($sortBy === 'municipality_cur')
+                  <span class="ml-1">{{ $sortDir === 'asc' ? '↑' : '↓' }}</span>
+                @endif
+              </a>  
+          </th>
+          <th class="px-4 py-2">
+            <a href="#" class="sort-header" data-field="territory_cur">
+                Territorio
+                @if($sortBy === 'territory_cur')
+                  <span class="ml-1">{{ $sortDir === 'asc' ? '↑' : '↓' }}</span>
+                @endif
+              </a>
+          </th>
+          <th class="px-4 py-2">
+            <a href="#" class="sort-header" data-field="moderation">
+                Moderación
+                @if($sortBy === 'moderation')
+                  <span class="ml-1">{{ $sortDir === 'asc' ? '↑' : '↓' }}</span>
+                @endif
+              </a>
+          </th>
+          <th class="px-4 py-2">
+            <a href="#" class="sort-header" data-field="visible">
+                Visible
+                @if($sortBy === 'visible')
+                  <span class="ml-1">{{ $sortDir === 'asc' ? '↑' : '↓' }}</span>
+                @endif
+              </a>
+          </th>
           <th class="px-4 py-2"></th>
         </tr>
       </thead>
@@ -140,6 +190,7 @@
       @endforeach
       </tbody>
     </table>
+    </div>
 
     <div class="mt-4">
       {{ $events->withQueryString()->links() }}
@@ -187,6 +238,33 @@
       }
     });
     */
+    document.querySelectorAll('.sort-header').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const field = link.dataset.field;
+
+      // Leer parámetros actuales de la URL
+      const params = new URLSearchParams(window.location.search);
+      const currentSort = params.get('sort_by');
+      const currentDir = params.get('sort_dir') || 'desc';
+
+      // Toggle: si ya está ordenado por este campo, cambiar dirección; si no, ordenar asc
+      let newDir = 'desc';
+      if (currentSort === field && currentDir === 'asc') {
+        newDir = 'desc';
+      } else if (currentSort === field) {
+        newDir = 'asc';
+      }
+
+      // Actualizar params
+      params.set('sort_by', field);
+      params.set('sort_dir', newDir);
+      params.set('page', '1'); // reset a página 1
+
+      // Navegar
+      window.location.search = params.toString();
+    });
+  });
   </script>
 </div>
 </x-app-layout>

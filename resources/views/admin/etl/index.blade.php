@@ -1,18 +1,67 @@
 <x-app-layout>
   <x-slot name="header">
     <h1 class="font-semibold text-xl text-gray-800 leading-tight">
-      Ejecutar ETLs
+      Importación - ETLs
     </h1>
   </x-slot>
 
   <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+
       <div class="bg-white shadow-sm sm:rounded-lg">
         <div class="p-6">
+          <h2 class="text-lg font-medium text-gray-900 mb-2">
+          ETLs programadas
+          </h2>
           <p class="text-gray-600 mb-4">
-            Selecciona y ejecuta una ETL. La salida del comando se mostrará en la última columna.
+          Ejecución automática mediante tareas programadas (cron).
           </p>
+          <div class="overflow-x-auto mb-4">  
+          <table class="w-full border-collapse">
+            <thead class="text-left text-gray-600 border-b">
+              <tr class="[&>th]:px-4 [&>th]:py-2">
+                <th class="w-1/5">ETL</th>
+                <th class="w-1/6">Fuente</th>
+                <th class="w-1/5">Descripción</th>
+                <th class="w-1/6">Periodicidad</th>
+                <th class="w-1/4">Hora</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y">
+                <tr class="[&>td]:px-4 [&>td]:py-2 align-top">
+                  <td class="font-medium text-gray-900">
+                    Kulturklik 7 días
+                    <div class="text-sm text-gray-500">comando: <code>etl:import kulturklik --mode=days --days=7 </code></div>
+                  </td>
 
+                  <td class="text-gray-700">kulturklik</td>
+
+                  <td class="text-gray-700">Importa los eventos de los próximos 7 dias</td>
+
+                  <td>
+                    Diario
+                  </td>
+
+                  <td class="text-xs">
+                    12:00 PM
+                  </td>
+                </tr>
+            </tbody>
+          </table>
+        </div>
+
+        </div>   
+      </div>
+
+      <div class="bg-white shadow-sm sm:rounded-lg">
+        <div class="p-6">
+          <h2 class="text-lg font-medium text-gray-900 mb-2">
+            Importación manual de ETLs
+          </h2>
+          <p class="text-gray-600 mb-4">
+            Aquí puedes ejecutar manualmente las ETLs configuradas en <code>config/etl.php</code>.
+          </p>
+          <div class="overflow-x-auto">
           <table class="w-full border-collapse">
             <thead class="text-left text-gray-600 border-b">
               <tr class="[&>th]:px-4 [&>th]:py-2">
@@ -54,7 +103,7 @@
               @endforeach
             </tbody>
           </table>
-
+          </div>
         </div>
       </div>
     </div>

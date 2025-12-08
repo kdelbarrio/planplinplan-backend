@@ -5,10 +5,10 @@ return [
     'jobs' => [
 
          // Variante “kulturklik proximo 1 dia”
-        'kulturklik-7d' => [
+        'kulturklik-1d' => [
             'name'        => 'Kulturklik (próximo día)',
             'source'      => 'Kulturklik',
-            'description' => 'Modo por dias: próximo 1 día',
+            'description' => 'Importa los eventos culturales del próximo día',
             'command'     => 'etl:import',
             'params'      => [
                 'source'  => 'kulturklik',
@@ -16,7 +16,20 @@ return [
                 '--days'  => 1,
             ],
         ],
-                 // Variante “kulturklik proximos 7 dias”
+        // Variante “kulturklik proximo 2 dias”
+        /*
+        'kulturklik-2d' => [
+            'name'        => 'Kulturklik (próximos 2 día)',
+            'source'      => 'Kulturklik',
+            'description' => 'Modo por dias: próximos 2 días',
+            'command'     => 'etl:import',
+            'params'      => [
+                'source'  => 'kulturklik',
+                '--mode'  => 'days',
+                '--days'  => 2,
+            ],
+        ],
+        // Variante “kulturklik proximos 7 dias”
         'kulturklik-7d' => [
             'name'        => 'Kulturklik (próximos 7 días)',
             'source'      => 'Kulturklik',
@@ -41,18 +54,17 @@ return [
                 '--days'  => 14,
             ],
         ],
-
+        */
         
-        // Variante “kulturklik-100”
-        'kulturklik-100' => [
-            'name'        => 'Kulturklik (2 páginas próximos eventos)',
+        // Variante “kulturklik-60d”
+        'kulturklik-30d' => [
+            'name'        => 'Kulturklik (30 dias)',
             'source'      => 'Euskadi - Kulturklik',
-            'description' => 'Modo upcoming, 2 páginas (100 eventos aprox.)',
+            'description' => 'Importa los eventos culturales de los próximos 30 dias',
             'command'     => 'etl:import',
             'params'      => [
                 'source'  => 'kulturklik',
-                '--mode'  => 'upcoming',
-                '--max'   => 2,
+                '--mode'  => '30d',
             ],
         ],
 

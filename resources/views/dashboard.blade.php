@@ -37,6 +37,7 @@
                         @if($usersToReview->isEmpty())
                             <p class="text-gray-500">No hay usuarios pendientes.</p>
                         @else
+                          <div class="overflow-x-auto">  
                             <table class="min-w-full text-sm divide-y divide-gray-200">
                                 <thead>
                                     <tr class="text-left text-xs text-gray-500">
@@ -64,6 +65,7 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                          </div>
                         @endif
                     </section>
 
@@ -73,6 +75,7 @@
                         @if($etlRuns->isEmpty())
                             <p class="text-gray-500">No hay importaciones registradas.</p>
                         @else
+                        <div class="overflow-x-auto">
                             <table class="min-w-full text-sm divide-y divide-gray-200">
                                 <thead>
                                     <tr class="text-left text-xs text-gray-500">
@@ -95,6 +98,7 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                        </div>
                         @endif
                     </section>
                 @endif

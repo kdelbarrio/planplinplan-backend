@@ -20,10 +20,10 @@ class EtlImportKulturklik extends Command
         {--to= : Página final (por defecto, hasta totalPages)}
         {--max= : Máximo de páginas a importar}
         {--elements=50 : Tamaño de página (_elements)}
-        {--timeout=20 : Timeout HTTP en segundos}
+        {--timeout=60 : Timeout HTTP en segundos}
         {--retries=3 : Reintentos por petición}
         {--sleep=500 : Backoff base en ms (exponencial)}
-        {--mode=days : Modo: upcoming (endpoint upcoming), days (endpoint byDate hoy→+N)}
+        {--mode=days : Modo: upcoming (endpoint upcoming), days (endpoint byDate hoy→+N)}, 60d (endpoint byMonth 60 días)}
         {--days=1 : Número de días a importar desde hoy en modo days}';
 
     protected $description = 'Importa eventos desde Kulturklik (Euskadi API) con paginación, retry/backoff y registro en etl_runs/etl_errors';
@@ -251,7 +251,8 @@ class EtlImportKulturklik extends Command
                 }
             
             
-            } else {
+            } elseif ($mode === '60d') 
+            {
                 // ====== MODO: 60 DÍAS USANDO byMonth ======
                 $this->info(sprintf(
                     "Importando %s [byMonth 60d] ventana %s → %s (UTC) (_elements=%d)",
@@ -314,6 +315,81 @@ class EtlImportKulturklik extends Command
                     }
                 }
             }
+
+
+            elseif ($mode === '30d') 
+            {
+                // ====== MODO: 30D adaptado → SOLO 1 MES (30 días) usando byMonth ======
+                // Queremos importar un único mes (usar el mes que contiene 'hoy'),
+                // pero limitar la ventana a 30 días (hoy + 29) para el filtrado de items.
+                $winStart = Carbon::today('UTC')->startOfDay();
+                $winEnd   = $winStart->copy()->addDays(29)->endOfDay();
+
+                $this->info(sprintf(
+                    "Importando %s [byMonth 1 mes (30d)] ventana %s → %s (UTC) (_elements=%d)",
+                    $source, $winStart->toDateString(), $winEnd->toDateString(), $elements
+                ));
+
+                // Solo solicitamos el mes que contiene $winStart
+                $y = $winStart->year;
+                $m = $winStart->month;
+                $baseUrl = sprintf('https://api.euskadi.eus/culture/events/v1.0/events/byMonth/%04d/%02d', $y, $m);
+
+                // Pide 1ª página para conocer totalPages (si existe); si no, seguimos hasta que una página < elements
+                $page = max(1, $fromPage);
+                $first = $this->fetchPage($baseUrl, $page, $elements, $timeout, $retries, $sleepMs);
+
+                if (!$first['ok']) {
+                    $this->logError($run->id, $source, null, $first['body'], $first['error']);
+                    $this->warn("Mes {$y}-{$m} — fallo en página {$page}: {$first['error']}");
+                    // no abortamos todo el job, sólo continuamos (no hay otro mes)
+                } else {
+                    $payload    = $first['json'];
+                    $totalPages = (int) Arr::get($payload, 'totalPages', 0);
+                    $toPage     = $toPageOpt ? (int) $toPageOpt : ($totalPages > 0 ? $totalPages : PHP_INT_MAX);
+
+                    if ($maxPages) {
+                        $toPage = min($toPage, $page + $maxPages - 1);
+                    }
+
+                    $this->info("Mes {$y}-{$m}: páginas {$page} → ".($toPage === PHP_INT_MAX ? '¿?' : $toPage));
+
+                    // Pág. 1
+                    $counts = $this->processItems($payload, $source, $upserter, $winStart, $winEnd);
+                    $run->total    += $counts['total'];
+                    $run->inserted += $counts['inserted'];
+                    $run->updated  += $counts['updated'];
+                    $run->errors   += $counts['errors'];
+
+                    // Pág. 2..N (si conocemos totalPages, iteramos hasta ahí; si no, cortamos cuando items < elements)
+                    $stopByShortPage = ($totalPages === 0);
+                    for ($p = $page + 1; $p <= $toPage; $p++) {
+                        $resp = $this->fetchPage($baseUrl, $p, $elements, $timeout, $retries, $sleepMs);
+                        if (!$resp['ok']) {
+                            $this->logError($run->id, $source, null, $resp['body'], $resp['error']);
+                            $this->warn("Mes {$y}-{$m} — página {$p}: {$resp['error']}");
+                            continue;
+                        }
+
+                        $counts = $this->processItems($resp['json'], $source, $upserter, $winStart, $winEnd);
+                        $run->total    += $counts['total'];
+                        $run->inserted += $counts['inserted'];
+                        $run->updated  += $counts['updated'];
+                        $run->errors   += $counts['errors'];
+
+                        if ($stopByShortPage) {
+                            $items = Arr::get($resp['json'], 'items', []);
+                            if (!is_array($items) || count($items) < $elements) {
+                                break; // última página alcanzada
+                            }
+                        }
+                    }
+                }
+            }
+
+
+
+
 
             //$this->line("Resumen → total: {$run->total} | inserted: {$run->inserted} | updated: {$run->updated} | errors: {$run->errors}");
             $this->info("Importación completada ✅  total={$run->total} inserted={$run->inserted} updated={$run->updated} errors={$run->errors}");

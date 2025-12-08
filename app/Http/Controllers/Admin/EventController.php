@@ -19,6 +19,17 @@ class EventController extends Controller
         $eventTypeId = $request->filled('event_type_id') ? (int)$request->integer('event_type_id') : null;
         $typeQ       = trim((string)$request->query('type_q', '')); // opcional: buscar por nombre/alias
 
+        // Ordenamiento
+        $sortBy = $request->query('sort_by', 'updated_at');
+        $sortDir = $request->query('sort_dir', 'desc');
+
+        // Campos permitidos para evitar inyección
+        $allowedFields = ['id', 'title_cur', 'starts_at', 'municipality_cur', 'territory_cur', 'moderation', 'visible', 'updated_at'];
+        if (!in_array($sortBy, $allowedFields)) {
+            $sortBy = 'updated_at';
+        }
+        $sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
+
         $events = Event::query()
             ->with('eventType')
             ->when($status, fn($q2) => $q2->where('moderation', $status))
@@ -45,14 +56,15 @@ class EventController extends Controller
                 });
             })
 
-            ->orderByDesc('updated_at')
+            //->orderByDesc('updated_at')
+            ->orderBy($sortBy, $sortDir)
             ->paginate($per)
             ->appends($request->query());
 
         // lista para el <select> de tipos
         $types = EventType::orderBy('name')->get(['id','name']);
         
-        return view('admin.events.index', compact('events', 'status', 'q', 'types'));
+        return view('admin.events.index', compact('events', 'status', 'q', 'types', 'sortBy', 'sortDir'));
     }
 
     //public function edit(Event $event)
@@ -133,38 +145,36 @@ class EventController extends Controller
     
     public function bulk(Request $request)
     {
-    $data = $request->validate([
-        'action' => ['required','in:approve,publish,approve_publish,hide'],
-        'ids'    => ['required','array','min:1'],
-        'ids.*'  => ['integer','exists:events,id'],
-    ]);
+        $data = $request->validate([
+            'ids'    => ['required', 'array', 'min:1'],
+            'ids.*'  => ['integer', 'exists:events,id'],
+            'action' => ['required', 'in:approve,publish,approve_publish,hide,delete'],
+        ]);
 
-    $q = \App\Models\Event::query()->whereIn('id', $data['ids']);
+        $ids = $data['ids'];
+        $action = $data['action'];
 
-    $updates = [];
-    switch ($data['action']) {
-        case 'approve':
-            $updates = ['moderation' => 'aprobado'];
-            break;
-        case 'publish':
-            $updates = ['visible' => true];
-            break;
-        case 'approve_publish':
-            $updates = ['moderation' => 'aprobado', 'visible' => true];
-            break;
-        case 'hide':
-            $updates = ['visible' => false];
-            break;
-    }
+        $events = Event::whereIn('id', $ids)->get();
 
-    $affected = 0;
-    if (!empty($updates)) {
-        $affected = $q->update($updates);
-    }
+        match ($action) {
+            'approve' => $events->each(fn($e) => $e->update(['moderation' => 'aprobado'])),
+            'publish' => $events->each(fn($e) => $e->update(['visible' => true])),
+            'approve_publish' => $events->each(fn($e) => $e->update(['moderation' => 'aprobado', 'visible' => true])),
+            'hide' => $events->each(fn($e) => $e->update(['visible' => false])),
+            'delete' => $events->each(fn($e) => $e->delete()),
+        };
 
-    return redirect()
-        ->route('admin.events.index', $request->only('status','q','per_page','page','event_type_id','type_q'))
-        ->with('ok', "Acción '{$data['action']}' aplicada a {$affected} eventos");
+        return back()
+            ->with('success', sprintf('%d evento(s) %s correctamente.', 
+                count($ids), 
+                match($action) {
+                    'approve' => 'aprobado(s)',
+                    'publish' => 'publicado(s)',
+                    'approve_publish' => 'aprobado(s) y publicado(s)',
+                    'hide' => 'ocultado(s)',
+                    'delete' => 'eliminado(s)',
+                }
+            ));
     }
 
 }
