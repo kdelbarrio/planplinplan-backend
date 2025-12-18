@@ -97,7 +97,11 @@ class EventController extends Controller
                // filtra eventos con age_max <= ageMax 
                $q->where('age_max', '<=', (int) $ageMax);
            })
-           ->when($accessibilityTags, function ($q) use ($accessibilityTags) {
+           ->when($accessibilityTags === 'a11y', function ($q) {
+               $q->whereNotNull('accessibility_tags')
+                 ->where('accessibility_tags', '!=', '');
+           })
+           ->when($accessibilityTags && $accessibilityTags !== 'a11y', function ($q) use ($accessibilityTags) {
                $tags = array_filter(array_map('trim', explode(',', $accessibilityTags)));
                $q->where(function ($qq) use ($tags) {
                    foreach ($tags as $tag) {
